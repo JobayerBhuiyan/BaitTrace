@@ -1,0 +1,25 @@
+Return-Path: <bounces+21947-news@bounce.mailprovider.example>
+Received: from o3.mailprovider.example (o3.mailprovider.example [203.0.113.9])
+	by mx.example.com with ESMTPS id 1Ab2Cd3456
+	for <reader@example.com>; Mon, 11 Aug 2026 06:30:12 +0000
+From: "The Weekly Dispatch" <news@newsletter.example>
+To: reader@example.com
+Reply-To: <no-reply@mailprovider.example>
+Subject: This week: five things worth reading
+Date: Mon, 11 Aug 2026 06:30:10 +0000
+Message-ID: <20260811063010.21947@o3.mailprovider.example>
+List-Id: The Weekly Dispatch <dispatch.newsletter.example>
+List-Unsubscribe: <https://newsletter.example/unsubscribe?id=21947>
+Precedence: bulk
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+
+Hello,
+
+Here are the five stories we thought were worth your time this week.
+
+1. A short history of the public suffix list
+2. Why your MTA disagrees with your mail client
+
+Read online: https://newsletter.example/issues/214
+Unsubscribe: https://newsletter.example/unsubscribe?id=21947

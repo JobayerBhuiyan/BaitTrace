@@ -1,0 +1,51 @@
+# ---------------------------------------------------------------------------
+# Email samples.
+#
+# Git history is permanent and public repositories are scraped within minutes.
+# A real phishing sample dropped into the working directory carries third-party
+# personal data and frequently a live malware payload, so samples are blocked
+# everywhere except the reviewed, synthetic-only corpus. See corpus/README.md.
+# ---------------------------------------------------------------------------
+*.eml
+*.msg
+*.mbox
+*.mbx
+*.pst
+*.ost
+!corpus/**/*.eml
+!corpus/**/*.mbox
+
+# Analysis byproducts that may contain message content
+*.baittrace.json
+scan-output/
+evidence-*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.python-version
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Editors and OS
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+.cursor/

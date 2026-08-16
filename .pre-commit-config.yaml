@@ -1,0 +1,45 @@
+# Run `pre-commit install` once after cloning.
+# The gitleaks and check-email-samples hooks exist because this repository is
+# public and git history cannot be un-published.
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=512"]
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: check-email-samples
+        name: block email samples outside corpus/
+        entry: python tools/check_email_samples.py
+        language: system
+        pass_filenames: true
+        types: [file]
+
+      - id: check-rule-docs
+        name: every rule ID has a docs/rules page
+        entry: python -m pytest tests/test_rule_docs.py -q
+        language: system
+        pass_filenames: false
+        always_run: true

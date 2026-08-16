@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.0",
+  "tool": {
+    "name": "baittrace",
+    "version": "0.1.0",
+    "rulepack": "core@2026.08"
+  },
+  "scan": {
+    "id": "aabed29da37c34f9",
+    "duration_ms": 0,
+    "online": false,
+    "analyzers": [
+      "identity",
+      "headers"
+    ],
+    "degraded": false,
+    "max_reachable_score": 60
+  },
+  "input": {
+    "source": "corpus/benign/receipt.eml",
+    "sha256": "aabed29da37c34f91a1840f6432797c75036bd9f7f4381d326cca26c0b874494",
+    "size_bytes": 631
+  },
+  "verdict": {
+    "score": 0,
+    "band": "BENIGN",
+    "trust_factor": 0
+  },
+  "message": {
+    "subject": "Your order 5512-A has shipped",
+    "from_display": "Shop Example Orders",
+    "from_address": "orders@shop.example",
+    "from_domain": "shop.example",
+    "reply_to": [],
+    "date": "Fri, 08 Aug 2026 17:22:38 +0000",
+    "url_count": 1,
+    "attachment_count": 0,
+    "urls": [
+      {
+        "defanged": "hxxps://shop[.]example/orders/5512-A",
+        "host": "shop.example",
+        "registrable_domain": "shop.example",
+        "location": "body:text"
+      }
+    ],
+    "attachments": []
+  },
+  "categories": [],
+  "signals": [],
+  "suppressors": [],
+  "errors": [],
+  "truncations": [],
+  "notes": []
+}

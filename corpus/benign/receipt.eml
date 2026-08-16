@@ -1,0 +1,18 @@
+Return-Path: <orders@shop.example>
+Received: from smtp.shop.example (smtp.shop.example [203.0.113.55])
+	by mx.example.com with ESMTPS id 9Ef8Gh7654
+	for <buyer@example.com>; Fri, 08 Aug 2026 17:22:41 +0000
+From: "Shop Example Orders" <orders@shop.example>
+To: buyer@example.com
+Subject: Your order 5512-A has shipped
+Date: Fri, 08 Aug 2026 17:22:38 +0000
+Message-ID: <order-5512-A@shop.example>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+
+Thanks for your order.
+
+Order 5512-A shipped today and should arrive within three working days.
+Track it at https://shop.example/orders/5512-A
+
+Shop Example

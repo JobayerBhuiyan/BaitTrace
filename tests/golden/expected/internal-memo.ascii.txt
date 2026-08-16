@@ -1,0 +1,27 @@
+BAITTRACE 0.1.0                                             core@2026.08
+------------------------------------------------------------------------
+Risk         BENIGN                                                0/100
+             ...........................................................
+Source       corpus/benign/internal-memo.eml
+Analyzed     offline | identity, headers | 0 ms
+
+MESSAGE
+Subject      Notes from yesterday's planning session
+Displayed    Alice Nakamura
+Actual       alice@corp.example
+Date         Thu, 07 Aug 2026 08:04:58 +0000
+
+FINDINGS
+             No indicators fired.
+
+NOT ANALYZED
+             This release does not yet examine links, attachments, SPF,
+             DKIM and DMARC, body wording, delivery path. The highest
+             score reachable from the evidence classes that did run is
+             60/100, so a low score reflects what was checked rather
+             than a clean bill of health.
+
+RECOMMENDED ACTION
+             No strong indicators were found. Ordinary caution still
+             applies: this tool reports what it can see, not what it
+             cannot.

@@ -1,0 +1,79 @@
+# BaitTrace core rulepack.
+#
+# Every constant that affects a score lives here, and the pack identifier is
+# recorded in every report. Changing a weight is a rulepack version bump, not a
+# silent behaviour change, so a score produced six months ago can still be
+# explained and reproduced.
+#
+# See docs/SCORING.md for the model and a worked example.
+
+name = "core"
+version = "2026.08"
+schema = 1
+
+[model]
+# "noisy_or" combines evidence classes with diminishing returns and saturation.
+# "additive" is available for anyone who wants strict addition; it is easier to
+# explain and easier to game.
+combination = "noisy_or"
+
+[bands]
+# Lower bound of each band. A score below `suspicious` is BENIGN.
+suspicious = 25
+high = 50
+critical = 75
+
+# ---------------------------------------------------------------------------
+# Categories
+#
+# cap      the most raw weight*confidence that counts within this class, which
+#          stops nine weak matches from outranking one strong one.
+# ceiling  the most this class alone may ever imply. Authentication is the
+#          strongest single evidence class; body wording is the weakest.
+# ---------------------------------------------------------------------------
+
+[categories.auth]
+cap = 30.0
+ceiling = 0.55
+
+[categories.identity]
+cap = 25.0
+ceiling = 0.50
+
+[categories.urls]
+cap = 25.0
+ceiling = 0.50
+
+[categories.attachments]
+cap = 25.0
+ceiling = 0.50
+
+[categories.content]
+cap = 15.0
+ceiling = 0.25
+
+[categories.routing]
+cap = 10.0
+ceiling = 0.20
+
+[categories.headers]
+cap = 10.0
+ceiling = 0.20
+
+# ---------------------------------------------------------------------------
+# Weight overrides
+#
+# Empty by default: analyzers declare sensible defaults in their RuleSpec and
+# this table exists so calibration can adjust them without touching code.
+# Example:
+#   [weights]
+#   IDN003 = 22.0
+# ---------------------------------------------------------------------------
+
+[weights]
+
+[trust]
+# Suppressors can never fully clear a message. An allowlisted domain is still
+# spoofable while DKIM verification is unavailable, so the most trust can do is
+# reduce a score by this fraction.
+max_factor = 0.9

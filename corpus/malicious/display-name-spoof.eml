@@ -1,0 +1,17 @@
+Return-Path: <finance.dept.2026@gmail.com>
+Received: from mail-sor-f41.google.example (mail-sor-f41.google.example [203.0.113.41])
+	by mx.example.com with ESMTPS id 3Pk9Rt5678
+	for <accounts@example.com>; Wed, 13 Aug 2026 14:02:11 +0000
+From: "PayPal Service <service@paypal.com>" <finance.dept.2026@gmail.com>
+From: "PayPal Service" <finance.dept.2026@gmail.com>
+To: accounts@example.com
+Subject: =?utf-8?B?SW52b2ljZSBJTlYtOTkyMSBpcyBwYXN0IGR1ZQ==?=
+Date: Wed, 13 Aug 2026 14:02:09 +0000
+MIME-Version: 1.0
+Content-Type: text/html; charset="utf-8"
+
+<html><body>
+<p>Your invoice INV-9921 is past due.</p>
+<p><a href="http://billing-paypa1.example/pay">https://www.paypal.com/invoice</a></p>
+<img src="http://tracker.example/o.gif?id=9921" width="1" height="1">
+</body></html>

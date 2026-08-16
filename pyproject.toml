@@ -1,0 +1,118 @@
+[build-system]
+requires = ["hatchling>=1.21"]
+build-backend = "hatchling.build"
+
+[project]
+name = "baittrace"
+dynamic = ["version"]
+description = "Offline-first, explainable phishing triage for a single email file."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "Jobayer Bhuiyan" }]
+keywords = ["phishing", "email", "security", "triage", "dfir", "soc"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Information Technology",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Typing :: Typed",
+]
+
+# No runtime dependencies. For a tool whose whole job is to be trustworthy
+# while parsing hostile input, every third-party package is attack surface and
+# a supply-chain risk. The standard library covers MIME, and the terminal grid
+# is easier to keep exact when nothing else is wrapping the text.
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "hypothesis>=6.100",
+    "jsonschema>=4.21",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "pre-commit>=3.7",
+]
+
+[project.urls]
+Homepage = "https://github.com/JobayerBhuiyan/baittrace"
+Documentation = "https://github.com/JobayerBhuiyan/baittrace/tree/main/docs"
+Issues = "https://github.com/JobayerBhuiyan/baittrace/issues"
+
+[project.scripts]
+baittrace = "baittrace.cli:main"
+
+# Built-in analyzers register through the same entry-point mechanism third-party
+# plugins use, so the plugin path is exercised by the project itself.
+[project.entry-points."baittrace.analyzers"]
+identity = "baittrace.analyzers.identity:IdentityAnalyzer"
+headers = "baittrace.analyzers.headers:HeaderAnalyzer"
+
+[tool.hatch.version]
+path = "src/baittrace/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/baittrace"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/baittrace", "tests", "docs", "corpus", "README.md", "LICENSE"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W",   # pycodestyle, pyflakes
+    "I",             # isort
+    "UP",            # pyupgrade
+    "B",             # bugbear
+    "S",             # bandit
+    "BLE",           # blind except
+    "C4",            # comprehensions
+    "SIM",           # simplify
+    "RUF",
+]
+ignore = [
+    "S101",     # assert is fine in tests and in internal invariants
+    # Ambiguous-unicode checks. This project detects homoglyph attacks, so
+    # Cyrillic lookalikes appear in docstrings, fixtures and test data on
+    # purpose. Flagging them would mean flagging the subject matter.
+    "RUF001",
+    "RUF002",
+    "RUF003",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "E501"]
+"corpus/generator.py" = ["S", "E501"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src/baittrace"]
+warn_unreachable = true
+disallow_any_generics = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+# The suite runs against the source tree directly, so a stale or missing
+# editable install can never make tests pass that would fail for a user.
+pythonpath = ["src"]
+addopts = "-q --strict-markers --strict-config"
+markers = [
+    "slow: tests that take more than a second",
+]
+
+[tool.coverage.run]
+source = ["src/baittrace"]
+branch = true

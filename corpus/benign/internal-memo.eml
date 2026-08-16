@@ -1,0 +1,18 @@
+Return-Path: <alice@corp.example>
+Received: from mail.corp.example (mail.corp.example [192.0.2.10])
+	by mail.corp.example with ESMTP id 2Jk4Lm8890
+	for <bob@corp.example>; Thu, 07 Aug 2026 08:05:00 +0000
+From: "Alice Nakamura" <alice@corp.example>
+To: "Bob Ellis" <bob@corp.example>
+Subject: Notes from yesterday's planning session
+Date: Thu, 07 Aug 2026 08:04:58 +0000
+Message-ID: <CAF9x2mQ7pL@mail.corp.example>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+
+Bob,
+
+Notes from yesterday are on the shared drive under Planning/2026-08.
+Nothing urgent, but take a look before Friday.
+
+Alice

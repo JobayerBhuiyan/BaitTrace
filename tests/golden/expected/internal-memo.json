@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0",
+  "tool": {
+    "name": "baittrace",
+    "version": "0.1.0",
+    "rulepack": "core@2026.08"
+  },
+  "scan": {
+    "id": "f3e7e44a87513f30",
+    "duration_ms": 0,
+    "online": false,
+    "analyzers": [
+      "identity",
+      "headers"
+    ],
+    "degraded": false,
+    "max_reachable_score": 60
+  },
+  "input": {
+    "source": "corpus/benign/internal-memo.eml",
+    "sha256": "f3e7e44a87513f30360705062711b79cbe4b96ec20523ec7d0de21bc2ac62d51",
+    "size_bytes": 622
+  },
+  "verdict": {
+    "score": 0,
+    "band": "BENIGN",
+    "trust_factor": 0
+  },
+  "message": {
+    "subject": "Notes from yesterday's planning session",
+    "from_display": "Alice Nakamura",
+    "from_address": "alice@corp.example",
+    "from_domain": "corp.example",
+    "reply_to": [],
+    "date": "Thu, 07 Aug 2026 08:04:58 +0000",
+    "url_count": 0,
+    "attachment_count": 0,
+    "urls": [],
+    "attachments": []
+  },
+  "categories": [],
+  "signals": [],
+  "suppressors": [],
+  "errors": [],
+  "truncations": [],
+  "notes": []
+}

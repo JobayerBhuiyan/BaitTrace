@@ -1,0 +1,53 @@
+---
+name: Bug
+description: Something BaitTrace got wrong — a crash, a hang, a missed detection, or a false positive.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not attach a real phishing email.** Samples in this tracker are public.
+        Use reserved domains (`.example`) and documentation IPs (`192.0.2.0/24`).
+        See `corpus/README.md`. Security issues in the parser go through
+        [private vulnerability reporting](../SECURITY.md), not here.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options:
+        - Crash or hang
+        - Missed detection (false negative)
+        - False positive
+        - Incorrect explanation or score
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command
+      description: The exact command you ran.
+      placeholder: baittrace scan sample.eml --format json
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: `baittrace version` output
+  - type: textarea
+    id: sample
+    attributes:
+      label: Synthetic sample
+      description: Paste a minimal `.eml` using only `.example` domains, or describe the technique if you cannot.

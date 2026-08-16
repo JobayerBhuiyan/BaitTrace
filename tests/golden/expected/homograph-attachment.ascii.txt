@@ -1,0 +1,68 @@
+BAITTRACE 0.1.0                                             core@2026.08
+------------------------------------------------------------------------
+Risk         HIGH                                                 60/100
+             ###################################........................
+Source       corpus/malicious/homograph-attachment.eml
+Analyzed     offline | identity, headers | 0 ms
+
+MESSAGE
+Subject      Your receipt from Apple
+Displayed    Apple ID
+Actual       noreply@xn--pple-43d.example
+Date         Sat, 01 Mar 2025 11:00:00 +0000
+Attachments  1 found
+             invoice<RLO>gnp.html  text/html
+
+FINDINGS
+             4 indicators
+
+[x]   +25  IDN004  Display name claims a brand the domain does not
+                   belong to
+             The display name claims Apple, but the message was sent
+             from xn--pple-43d.example, which is not one of Apple's
+             known domains.
+evidence     header:From  Apple ID <noreply@xn--pple-43d.example>
+             display name claims Apple
+
+[x]   +23  IDN005  Sender domain uses punycode or mixes scripts
+             xn--pple-43d.example is an internationalised domain that
+             decodes to '<U+0430>pple.example', which mixes writing
+             systems within the name.
+evidence     header:From  Apple ID <noreply@xn--pple-43d.example>
+             decodes to <U+0430>pple.example
+
+[!]    +7  HDR004  Date header is malformed or contradicts delivery
+             The Date header says 2025-03-01T11:00:00+00:00 but the
+             delivery chain timestamps the message at
+             2026-08-14T03:41:52+00:00, a difference of 530 day(s). The
+             two should agree closely.
+evidence     header:Date  Sat, 01 Mar 2025 11:00:00 +0000
+evidence     header:Received  2026-08-14T03:41:52+00:00
+
+[!]    +5  HDR003  Message-ID domain does not match the sender
+             The Message-ID was generated at relay.example while the
+             message claims to be from xn--pple-43d.example. This is
+             normal for mail sent through a service provider, so it only
+             matters alongside the other findings here.
+evidence     header:Message-ID  <receipt-4471@relay.example>
+evidence     header:From  Apple ID <noreply@xn--pple-43d.example>
+
+SCORING
+identity     ################  raw 29.2, cap 25 (capped)
+headers      ################  raw 11.2, cap 10 (capped)
+             Points shown against each finding are attributed
+             contributions that sum to the score, not literal addends;
+             see docs/SCORING.md.
+
+NOT ANALYZED
+             This release does not yet examine links, attachments, SPF,
+             DKIM and DMARC, body wording, delivery path. The highest
+             score reachable from the evidence classes that did run is
+             60/100, so a low score reflects what was checked rather
+             than a clean bill of health.
+
+RECOMMENDED ACTION
+             Treat this as phishing until proven otherwise. Do not click
+             links or open attachments. Verify with the supposed sender
+             through a channel you already trust, not one this message
+             provides.

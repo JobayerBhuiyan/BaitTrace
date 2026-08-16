@@ -1,0 +1,86 @@
+BAITTRACE 0.1.0                                             core@2026.08
+------------------------------------------------------------------------
+Risk         HIGH                                                 60/100
+             ###################################........................
+Source       corpus/malicious/brand-lookalike.eml
+Analyzed     offline | identity, headers | 0 ms
+
+MESSAGE
+Subject      Action required: your account will be suspended in 24 hours
+Displayed    Microsoft Support
+Actual       account@micros0ft-login.example
+Reply-To     recovery@mail-secure.example
+Date         Tue, 12 Aug 2026 09:14:02 +0000
+Links        1 found
+             hxxp://198[.]51[.]100[.]23/account/verify?id=8831
+
+FINDINGS
+             5 indicators
+
+[x]   +24  IDN003  Sender domain resembles a known brand
+             The sending domain micros0ft-login.example contains
+             'micros0ft', which reduces to the same confusable skeleton
+             as Microsoft. micros0ft-login.example is not one of
+             Microsoft's known domains, so the resemblance is not
+             legitimate.
+evidence     header:From  Microsoft Support <account@micros0ft-
+             login.example>
+             skeleton(micros0ft) == skeleton(microsoft)
+
+[x]   +15  IDN004  Display name claims a brand the domain does not
+                   belong to
+             The display name claims Microsoft, but the message was sent
+             from micros0ft-login.example, which is not one of
+             Microsoft's known domains.
+evidence     header:From  Microsoft Support <account@micros0ft-
+             login.example>
+             display name claims Microsoft
+
+[!]    +8  HDR005  Return-Path does not match the sender
+             Bounces for this message go to mail-secure.example, but the
+             reader sees micros0ft-login.example as the sender.
+             Legitimate providers do this too, so weigh it together with
+             the authentication and identity findings.
+evidence     header:Return-Path  bounce@mail-secure.example
+evidence     header:From  Microsoft Support <account@micros0ft-
+             login.example>
+
+[!]    +8  IDN002  Reply-To points at a different organisation
+             A reply would be delivered to recovery@mail-secure.example
+             at mail-secure.example, not to micros0ft-login.example.
+             Redirecting replies is how a conversation is moved
+             somewhere the real sender cannot see it.
+evidence     header:From  Microsoft Support <account@micros0ft-
+             login.example>
+evidence     header:Reply-To  Account Recovery <recovery@mail-
+             secure.example>
+
+[!]    +5  HDR003  Message-ID domain does not match the sender
+             The Message-ID was generated at mail-secure.example while
+             the message claims to be from micros0ft-login.example. This
+             is normal for mail sent through a service provider, so it
+             only matters alongside the other findings here.
+evidence     header:Message-ID
+             <5f2a9c04-1b77-4a10-9d3e-77bb0c2e1a55@mail-secure.example>
+evidence     header:From  Microsoft Support <account@micros0ft-
+             login.example>
+
+SCORING
+identity     ################  raw 46.8, cap 25 (capped)
+headers      ################  raw 12.8, cap 10 (capped)
+             Points shown against each finding are attributed
+             contributions that sum to the score, not literal addends;
+             see docs/SCORING.md.
+
+NOT ANALYZED
+             This release does not yet examine links, attachments, SPF,
+             DKIM and DMARC, body wording, delivery path. The highest
+             score reachable from the evidence classes that did run is
+             60/100, so a low score reflects what was checked rather
+             than a clean bill of health.
+
+RECOMMENDED ACTION
+             Treat this as phishing until proven otherwise. Do not click
+             links or open attachments. Verify with the supposed sender
+             through a channel you already trust, not one this message
+             provides.

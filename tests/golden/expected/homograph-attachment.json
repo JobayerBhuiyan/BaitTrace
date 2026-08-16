@@ -1,0 +1,171 @@
+{
+  "schema_version": "1.0",
+  "tool": {
+    "name": "baittrace",
+    "version": "0.1.0",
+    "rulepack": "core@2026.08"
+  },
+  "scan": {
+    "id": "428035e4a84af5cf",
+    "duration_ms": 0,
+    "online": false,
+    "analyzers": [
+      "identity",
+      "headers"
+    ],
+    "degraded": false,
+    "max_reachable_score": 60
+  },
+  "input": {
+    "source": "corpus/malicious/homograph-attachment.eml",
+    "sha256": "428035e4a84af5cf6cd3abac4b7cd1196c3104e462d6eb510a7d6b89f647de86",
+    "size_bytes": 1066
+  },
+  "verdict": {
+    "score": 60,
+    "band": "HIGH",
+    "trust_factor": 0
+  },
+  "message": {
+    "subject": "Your receipt from Apple",
+    "from_display": "Apple ID",
+    "from_address": "noreply@xn--pple-43d.example",
+    "from_domain": "xn--pple-43d.example",
+    "reply_to": [],
+    "date": "Sat, 01 Mar 2025 11:00:00 +0000",
+    "url_count": 0,
+    "attachment_count": 1,
+    "urls": [],
+    "attachments": [
+      {
+        "filename": "invoice<RLO>gnp.html",
+        "declared_mime": "text/html",
+        "sniffed_mime": "text/html",
+        "size_bytes": 206,
+        "sha256": "5c551b9172fdf1d67337fe3ff367c12477376f7c108eb2dba1034dbaebf06650"
+      }
+    ]
+  },
+  "categories": [
+    {
+      "name": "identity",
+      "raw": 29.25,
+      "cap": 25.0,
+      "ceiling": 0.5,
+      "strength": 1.0
+    },
+    {
+      "name": "headers",
+      "raw": 11.2,
+      "cap": 10.0,
+      "ceiling": 0.2,
+      "strength": 1.0
+    }
+  ],
+  "signals": [
+    {
+      "id": "IDN004",
+      "category": "identity",
+      "title": "Display name claims a brand the domain does not belong to",
+      "severity": "high",
+      "kind": "indicator",
+      "weight": 20.0,
+      "confidence": 0.75,
+      "contribution": 25,
+      "explanation": "The display name claims Apple, but the message was sent from xn--pple-43d.example, which is not one of Apple's known domains.",
+      "advice": "Treat the branding as decoration. Verify through the brand's own app or site.",
+      "evidence": [
+        {
+          "locator": "header:From",
+          "excerpt": "Apple ID <noreply@xn--pple-43d.example>",
+          "note": "display name claims Apple"
+        }
+      ],
+      "refs": [
+        "MITRE ATT&CK T1566.002"
+      ]
+    },
+    {
+      "id": "IDN005",
+      "category": "identity",
+      "title": "Sender domain uses punycode or mixes scripts",
+      "severity": "high",
+      "kind": "indicator",
+      "weight": 15.0,
+      "confidence": 0.95,
+      "contribution": 23,
+      "explanation": "xn--pple-43d.example is an internationalised domain that decodes to 'аpple.example', which mixes writing systems within the name.",
+      "advice": "Read the decoded form of the domain rather than the rendered one.",
+      "evidence": [
+        {
+          "locator": "header:From",
+          "excerpt": "Apple ID <noreply@xn--pple-43d.example>",
+          "note": "decodes to аpple.example"
+        }
+      ],
+      "refs": [
+        "RFC 3492",
+        "RFC 5890",
+        "Unicode UTS #39"
+      ]
+    },
+    {
+      "id": "HDR003",
+      "category": "headers",
+      "title": "Message-ID domain does not match the sender",
+      "severity": "medium",
+      "kind": "indicator",
+      "weight": 8.0,
+      "confidence": 0.6,
+      "contribution": 5,
+      "explanation": "The Message-ID was generated at relay.example while the message claims to be from xn--pple-43d.example. This is normal for mail sent through a service provider, so it only matters alongside the other findings here.",
+      "advice": "Corroborating evidence only. Read it together with the sender findings.",
+      "evidence": [
+        {
+          "locator": "header:Message-ID",
+          "excerpt": "<receipt-4471@relay.example>",
+          "note": ""
+        },
+        {
+          "locator": "header:From",
+          "excerpt": "Apple ID <noreply@xn--pple-43d.example>",
+          "note": ""
+        }
+      ],
+      "refs": [
+        "RFC 5322 section 3.6.4"
+      ]
+    },
+    {
+      "id": "HDR004",
+      "category": "headers",
+      "title": "Date header is malformed or contradicts delivery",
+      "severity": "medium",
+      "kind": "indicator",
+      "weight": 8.0,
+      "confidence": 0.8,
+      "contribution": 7,
+      "explanation": "The Date header says 2025-03-01T11:00:00+00:00 but the delivery chain timestamps the message at 2026-08-14T03:41:52+00:00, a difference of 530 day(s). The two should agree closely.",
+      "advice": "A forged Date is often used to bury a message in a mailbox or to fake urgency.",
+      "evidence": [
+        {
+          "locator": "header:Date",
+          "excerpt": "Sat, 01 Mar 2025 11:00:00 +0000",
+          "note": ""
+        },
+        {
+          "locator": "header:Received",
+          "excerpt": "2026-08-14T03:41:52+00:00",
+          "note": ""
+        }
+      ],
+      "refs": [
+        "RFC 5322 section 3.3"
+      ]
+    }
+  ],
+  "suppressors": [],
+  "errors": [],
+  "truncations": [],
+  "notes": []
+}

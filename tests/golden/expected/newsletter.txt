@@ -1,0 +1,73 @@
+BAITTRACE 0.1.0                                             core@2026.08
+────────────────────────────────────────────────────────────────────────
+Risk         BENIGN                                               16/100
+             █████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+Source       corpus/benign/newsletter.eml
+Analyzed     offline | identity, headers | 0 ms
+
+MESSAGE
+Subject      This week: five things worth reading
+Displayed    The Weekly Dispatch
+Actual       news@newsletter.example
+Reply-To     no-reply@mailprovider.example
+Date         Mon, 11 Aug 2026 06:30:10 +0000
+Links        2 found
+             hxxps://newsletter[.]example/issues/214
+             hxxps://newsletter[.]example/unsubscribe?id=21947
+
+FINDINGS
+             3 indicators
+
+⚠    +6  HDR005  Return-Path does not match the sender
+             Bounces for this message go to mailprovider.example, but
+             the reader sees newsletter.example as the sender.
+             Legitimate providers do this too, so weigh it together with
+             the authentication and identity findings. This message
+             carries bulk-mail headers (List-Id, List-Unsubscribe,
+             Precedence), where this pattern is routine, so the finding
+             is weighted down rather than removed.
+evidence     header:Return-Path
+             bounces+21947-news@bounce.mailprovider.example
+evidence     header:From  The Weekly Dispatch <news@newsletter.example>
+
+⚠    +6  IDN002  Reply-To points at a different organisation
+             A reply would be delivered to no-reply@mailprovider.example
+             at mailprovider.example, not to newsletter.example.
+             Redirecting replies is how a conversation is moved
+             somewhere the real sender cannot see it. This message
+             carries bulk-mail headers (List-Id, List-Unsubscribe,
+             Precedence), where this pattern is routine, so the finding
+             is weighted down rather than removed.
+evidence     header:From  The Weekly Dispatch <news@newsletter.example>
+evidence     header:Reply-To  no-reply@mailprovider.example
+
+⚠    +4  HDR003  Message-ID domain does not match the sender
+             The Message-ID was generated at mailprovider.example while
+             the message claims to be from newsletter.example. This is
+             normal for mail sent through a service provider, so it only
+             matters alongside the other findings here. This message
+             carries bulk-mail headers (List-Id, List-Unsubscribe,
+             Precedence), where this pattern is routine, so the finding
+             is weighted down rather than removed.
+evidence     header:Message-ID
+             <20260811063010.21947@o3.mailprovider.example>
+evidence     header:From  The Weekly Dispatch <news@newsletter.example>
+
+SCORING
+headers      ████████░░░░░░░░  raw 5.0, cap 10
+identity     ██░░░░░░░░░░░░░░  raw 3.2, cap 25
+             Points shown against each finding are attributed
+             contributions that sum to the score, not literal addends;
+             see docs/SCORING.md.
+
+NOT ANALYZED
+             This release does not yet examine links, attachments, SPF,
+             DKIM and DMARC, body wording, delivery path. The highest
+             score reachable from the evidence classes that did run is
+             60/100, so a low score reflects what was checked rather
+             than a clean bill of health.
+
+RECOMMENDED ACTION
+             No strong indicators were found. Ordinary caution still
+             applies: this tool reports what it can see, not what it
+             cannot.

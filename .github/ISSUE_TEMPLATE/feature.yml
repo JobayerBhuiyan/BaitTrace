@@ -1,0 +1,41 @@
+---
+name: Feature
+description: A new rule, a new analyzer, or a change to scoring.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please read `docs/ROADMAP.md` and `CONTRIBUTING.md` first. The most
+        useful proposal is a rule with a synthetic sample and a known false
+        positive. Please do not propose a machine-learning classifier for v1.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - New rule on an existing analyzer
+        - New analyzer
+        - Scoring
+        - CLI or JSON contract
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+    validations:
+      required: true
+  - type: textarea
+    id: false-positives
+    attributes:
+      label: How would this go wrong on legitimate mail?
+      description: Required for detection changes. The benign corpus is the budget.

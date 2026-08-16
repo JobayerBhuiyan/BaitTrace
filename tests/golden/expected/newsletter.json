@@ -1,0 +1,160 @@
+{
+  "schema_version": "1.0",
+  "tool": {
+    "name": "baittrace",
+    "version": "0.1.0",
+    "rulepack": "core@2026.08"
+  },
+  "scan": {
+    "id": "03abfa182e813055",
+    "duration_ms": 0,
+    "online": false,
+    "analyzers": [
+      "identity",
+      "headers"
+    ],
+    "degraded": false,
+    "max_reachable_score": 60
+  },
+  "input": {
+    "source": "corpus/benign/newsletter.eml",
+    "sha256": "03abfa182e813055d55e0e7c155d8a4d7a474935ef3adc48e3803cab86c4809f",
+    "size_bytes": 1021
+  },
+  "verdict": {
+    "score": 16,
+    "band": "BENIGN",
+    "trust_factor": 0
+  },
+  "message": {
+    "subject": "This week: five things worth reading",
+    "from_display": "The Weekly Dispatch",
+    "from_address": "news@newsletter.example",
+    "from_domain": "newsletter.example",
+    "reply_to": [
+      "no-reply@mailprovider.example"
+    ],
+    "date": "Mon, 11 Aug 2026 06:30:10 +0000",
+    "url_count": 2,
+    "attachment_count": 0,
+    "urls": [
+      {
+        "defanged": "hxxps://newsletter[.]example/issues/214",
+        "host": "newsletter.example",
+        "registrable_domain": "newsletter.example",
+        "location": "body:text"
+      },
+      {
+        "defanged": "hxxps://newsletter[.]example/unsubscribe?id=21947",
+        "host": "newsletter.example",
+        "registrable_domain": "newsletter.example",
+        "location": "body:text"
+      }
+    ],
+    "attachments": []
+  },
+  "categories": [
+    {
+      "name": "headers",
+      "raw": 5.0,
+      "cap": 10.0,
+      "ceiling": 0.2,
+      "strength": 0.5
+    },
+    {
+      "name": "identity",
+      "raw": 3.2,
+      "cap": 25.0,
+      "ceiling": 0.5,
+      "strength": 0.128
+    }
+  ],
+  "signals": [
+    {
+      "id": "IDN002",
+      "category": "identity",
+      "title": "Reply-To points at a different organisation",
+      "severity": "medium",
+      "kind": "indicator",
+      "weight": 4.0,
+      "confidence": 0.8,
+      "contribution": 6,
+      "explanation": "A reply would be delivered to no-reply@mailprovider.example at mailprovider.example, not to newsletter.example. Redirecting replies is how a conversation is moved somewhere the real sender cannot see it. This message carries bulk-mail headers (List-Id, List-Unsubscribe, Precedence), where this pattern is routine, so the finding is weighted down rather than removed.",
+      "advice": "Check where a reply would actually go before responding.",
+      "evidence": [
+        {
+          "locator": "header:From",
+          "excerpt": "The Weekly Dispatch <news@newsletter.example>",
+          "note": ""
+        },
+        {
+          "locator": "header:Reply-To",
+          "excerpt": "no-reply@mailprovider.example",
+          "note": ""
+        }
+      ],
+      "refs": [
+        "RFC 5322 section 3.6.2"
+      ]
+    },
+    {
+      "id": "HDR003",
+      "category": "headers",
+      "title": "Message-ID domain does not match the sender",
+      "severity": "medium",
+      "kind": "indicator",
+      "weight": 3.0,
+      "confidence": 0.6,
+      "contribution": 4,
+      "explanation": "The Message-ID was generated at mailprovider.example while the message claims to be from newsletter.example. This is normal for mail sent through a service provider, so it only matters alongside the other findings here. This message carries bulk-mail headers (List-Id, List-Unsubscribe, Precedence), where this pattern is routine, so the finding is weighted down rather than removed.",
+      "advice": "Corroborating evidence only. Read it together with the sender findings.",
+      "evidence": [
+        {
+          "locator": "header:Message-ID",
+          "excerpt": "<20260811063010.21947@o3.mailprovider.example>",
+          "note": ""
+        },
+        {
+          "locator": "header:From",
+          "excerpt": "The Weekly Dispatch <news@newsletter.example>",
+          "note": ""
+        }
+      ],
+      "refs": [
+        "RFC 5322 section 3.6.4"
+      ]
+    },
+    {
+      "id": "HDR005",
+      "category": "headers",
+      "title": "Return-Path does not match the sender",
+      "severity": "medium",
+      "kind": "indicator",
+      "weight": 4.0,
+      "confidence": 0.8,
+      "contribution": 6,
+      "explanation": "Bounces for this message go to mailprovider.example, but the reader sees newsletter.example as the sender. Legitimate providers do this too, so weigh it together with the authentication and identity findings. This message carries bulk-mail headers (List-Id, List-Unsubscribe, Precedence), where this pattern is routine, so the finding is weighted down rather than removed.",
+      "advice": "Check whether the envelope sender is an expected mail provider for this brand.",
+      "evidence": [
+        {
+          "locator": "header:Return-Path",
+          "excerpt": "bounces+21947-news@bounce.mailprovider.example",
+          "note": ""
+        },
+        {
+          "locator": "header:From",
+          "excerpt": "The Weekly Dispatch <news@newsletter.example>",
+          "note": ""
+        }
+      ],
+      "refs": [
+        "RFC 5321 section 4.4",
+        "RFC 7489"
+      ]
+    }
+  ],
+  "suppressors": [],
+  "errors": [],
+  "truncations": [],
+  "notes": []
+}

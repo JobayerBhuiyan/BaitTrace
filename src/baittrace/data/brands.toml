@@ -1,0 +1,158 @@
+# Commonly impersonated brands.
+#
+# This is data, not code, so coverage can be extended by pull request without
+# touching detection logic. Two fields matter and they do different jobs:
+#
+#   aliases  strings a lookalike domain would try to resemble. Compared by
+#            confusable skeleton and edit distance, so include the forms an
+#            attacker would register, not marketing names.
+#   domains  domains the brand legitimately sends from. A hit on an alias is
+#            only a finding when the sending domain is NOT in this list, so an
+#            incomplete domains list produces false positives. When in doubt,
+#            include the domain.
+#
+# Add your own employer, executives and internal domains through user config
+# rather than here; see docs/rules/IDN003.md.
+
+[[brand]]
+name = "Microsoft"
+aliases = ["microsoft", "office365", "outlook", "onedrive", "sharepoint", "azure"]
+domains = [
+    "microsoft.com", "microsoftonline.com", "office.com", "office365.com",
+    "outlook.com", "live.com", "msn.com", "onedrive.com", "sharepoint.com",
+    "azure.com", "windows.com", "skype.com", "bing.com",
+]
+
+[[brand]]
+name = "Google"
+aliases = ["google", "gmail", "googledrive", "youtube"]
+domains = [
+    "google.com", "gmail.com", "googlemail.com", "youtube.com",
+    "googleapis.com", "google.co.uk", "withgoogle.com",
+]
+
+[[brand]]
+name = "Apple"
+aliases = ["apple", "icloud", "itunes", "appleid"]
+domains = ["apple.com", "icloud.com", "itunes.com", "me.com", "mac.com"]
+
+[[brand]]
+name = "Amazon"
+aliases = ["amazon", "aws", "amazonprime"]
+domains = [
+    "amazon.com", "amazon.co.uk", "amazonses.com", "amazonaws.com",
+    "primevideo.com", "audible.com",
+]
+
+[[brand]]
+name = "PayPal"
+aliases = ["paypal"]
+domains = ["paypal.com", "paypal.co.uk", "paypalobjects.com"]
+
+[[brand]]
+name = "Meta"
+aliases = ["facebook", "instagram", "whatsapp", "meta"]
+domains = [
+    "facebook.com", "facebookmail.com", "instagram.com", "whatsapp.com",
+    "meta.com", "fb.com",
+]
+
+[[brand]]
+name = "Netflix"
+aliases = ["netflix"]
+domains = ["netflix.com", "nflxext.com"]
+
+[[brand]]
+name = "LinkedIn"
+aliases = ["linkedin"]
+domains = ["linkedin.com", "licdn.com"]
+
+[[brand]]
+name = "DocuSign"
+aliases = ["docusign"]
+domains = ["docusign.com", "docusign.net"]
+
+[[brand]]
+name = "Dropbox"
+aliases = ["dropbox"]
+domains = ["dropbox.com", "dropboxmail.com"]
+
+[[brand]]
+name = "Adobe"
+aliases = ["adobe", "acrobat"]
+domains = ["adobe.com", "adobelogin.com"]
+
+[[brand]]
+name = "GitHub"
+aliases = ["github"]
+domains = ["github.com", "githubusercontent.com", "githubapp.com"]
+
+[[brand]]
+name = "Slack"
+aliases = ["slack"]
+domains = ["slack.com", "slack-mail.com"]
+
+[[brand]]
+name = "Zoom"
+aliases = ["zoom"]
+domains = ["zoom.us", "zoom.com"]
+
+[[brand]]
+name = "Stripe"
+aliases = ["stripe"]
+domains = ["stripe.com"]
+
+[[brand]]
+name = "Coinbase"
+aliases = ["coinbase"]
+domains = ["coinbase.com"]
+
+[[brand]]
+name = "Chase"
+aliases = ["chase", "jpmorgan"]
+domains = ["chase.com", "jpmorgan.com", "jpmchase.com"]
+
+[[brand]]
+name = "Bank of America"
+aliases = ["bankofamerica", "bofa"]
+domains = ["bankofamerica.com", "bofa.com"]
+
+[[brand]]
+name = "Wells Fargo"
+aliases = ["wellsfargo"]
+domains = ["wellsfargo.com"]
+
+[[brand]]
+name = "American Express"
+aliases = ["americanexpress", "amex"]
+domains = ["americanexpress.com", "aexp.com"]
+
+[[brand]]
+name = "UPS"
+aliases = ["ups"]
+domains = ["ups.com"]
+
+[[brand]]
+name = "FedEx"
+aliases = ["fedex"]
+domains = ["fedex.com"]
+
+[[brand]]
+name = "DHL"
+aliases = ["dhl"]
+domains = ["dhl.com", "dhl.de"]
+
+[[brand]]
+name = "IRS"
+aliases = ["irs"]
+domains = ["irs.gov"]
+
+[[brand]]
+name = "Norton"
+aliases = ["norton", "nortonlifelock"]
+domains = ["norton.com", "nortonlifelock.com"]
+
+[[brand]]
+name = "McAfee"
+aliases = ["mcafee"]
+domains = ["mcafee.com"]

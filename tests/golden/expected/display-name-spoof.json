@@ -1,0 +1,182 @@
+{
+  "schema_version": "1.0",
+  "tool": {
+    "name": "baittrace",
+    "version": "0.1.0",
+    "rulepack": "core@2026.08"
+  },
+  "scan": {
+    "id": "11f2c480d9675644",
+    "duration_ms": 0,
+    "online": false,
+    "analyzers": [
+      "identity",
+      "headers"
+    ],
+    "degraded": false,
+    "max_reachable_score": 60
+  },
+  "input": {
+    "source": "corpus/malicious/display-name-spoof.eml",
+    "sha256": "11f2c480d96756442af4a7cc7352b7b9897461624717064d8550fe6b2f598778",
+    "size_bytes": 792
+  },
+  "verdict": {
+    "score": 60,
+    "band": "HIGH",
+    "trust_factor": 0
+  },
+  "message": {
+    "subject": "Invoice INV-9921 is past due",
+    "from_display": "PayPal Service <service@paypal.com>",
+    "from_address": "finance.dept.2026@gmail.com",
+    "from_domain": "gmail.com",
+    "reply_to": [],
+    "date": "Wed, 13 Aug 2026 14:02:09 +0000",
+    "url_count": 5,
+    "attachment_count": 0,
+    "urls": [
+      {
+        "defanged": "hxxp://billing-paypa1[.]example/pay",
+        "host": "billing-paypa1.example",
+        "registrable_domain": "billing-paypa1.example",
+        "location": "html:a[href]"
+      },
+      {
+        "defanged": "hxxp://tracker[.]example/o.gif?id=9921",
+        "host": "tracker.example",
+        "registrable_domain": "tracker.example",
+        "location": "html:img[src]"
+      },
+      {
+        "defanged": "hxxp://billing-paypa1[.]example/pay",
+        "host": "billing-paypa1.example",
+        "registrable_domain": "billing-paypa1.example",
+        "location": "body:html"
+      },
+      {
+        "defanged": "hxxps://www[.]paypal[.]com/invoice",
+        "host": "www.paypal.com",
+        "registrable_domain": "paypal.com",
+        "location": "body:html"
+      },
+      {
+        "defanged": "hxxp://tracker[.]example/o.gif?id=9921",
+        "host": "tracker.example",
+        "registrable_domain": "tracker.example",
+        "location": "body:html"
+      }
+    ],
+    "attachments": []
+  },
+  "categories": [
+    {
+      "name": "identity",
+      "raw": 35.1,
+      "cap": 25.0,
+      "ceiling": 0.5,
+      "strength": 1.0
+    },
+    {
+      "name": "headers",
+      "raw": 24.4,
+      "cap": 10.0,
+      "ceiling": 0.2,
+      "strength": 1.0
+    }
+  ],
+  "signals": [
+    {
+      "id": "IDN001",
+      "category": "identity",
+      "title": "Display name contains a different email address",
+      "severity": "high",
+      "kind": "indicator",
+      "weight": 18.0,
+      "confidence": 0.95,
+      "contribution": 23,
+      "explanation": "The display name shows service@paypal.com, but the message is actually from finance.dept.2026@gmail.com. A mail client shows the display name, so the address a reader sees is not the address that sent this.",
+      "advice": "Treat the visible address as forged. Verify through a known-good channel.",
+      "evidence": [
+        {
+          "locator": "header:From",
+          "excerpt": "PayPal Service <service@paypal.com> <finance.dept.2026@gmail.com>",
+          "note": "claims paypal.com, actually gmail.com"
+        }
+      ],
+      "refs": [
+        "RFC 5322 section 3.4",
+        "MITRE ATT&CK T1566.002"
+      ]
+    },
+    {
+      "id": "IDN004",
+      "category": "identity",
+      "title": "Display name claims a brand the domain does not belong to",
+      "severity": "high",
+      "kind": "indicator",
+      "weight": 20.0,
+      "confidence": 0.9,
+      "contribution": 25,
+      "explanation": "The display name claims PayPal, but the message was sent from gmail.com, which is a consumer mailbox provider. A brand does not contact customers from a personal mailbox.",
+      "advice": "Treat the branding as decoration. Verify through the brand's own app or site.",
+      "evidence": [
+        {
+          "locator": "header:From",
+          "excerpt": "PayPal Service <service@paypal.com> <finance.dept.2026@gmail.com>",
+          "note": "display name claims PayPal"
+        }
+      ],
+      "refs": [
+        "MITRE ATT&CK T1566.002"
+      ]
+    },
+    {
+      "id": "HDR001",
+      "category": "headers",
+      "title": "Duplicate single-occurrence header",
+      "severity": "high",
+      "kind": "indicator",
+      "weight": 20.0,
+      "confidence": 0.95,
+      "contribution": 9,
+      "explanation": "These headers appear more than once: from. RFC 5322 permits one occurrence each. When a message carries two, the header a gateway validates and the header your mail client displays can be different ones, which is exactly what the technique exploits.",
+      "advice": "Compare the duplicated values. The one your client shows may not be the one that was validated.",
+      "evidence": [
+        {
+          "locator": "header:From#2",
+          "excerpt": "\"PayPal Service <service@paypal.com>\" <finance.dept.2026@gmail.com>",
+          "note": ""
+        },
+        {
+          "locator": "header:From#3",
+          "excerpt": "\"PayPal Service\" <finance.dept.2026@gmail.com>",
+          "note": ""
+        }
+      ],
+      "refs": [
+        "RFC 5322 section 3.6"
+      ]
+    },
+    {
+      "id": "HDR002",
+      "category": "headers",
+      "title": "Message-ID is missing",
+      "severity": "low",
+      "kind": "indicator",
+      "weight": 6.0,
+      "confidence": 0.9,
+      "contribution": 3,
+      "explanation": "No Message-ID header is present. Mail clients and mail servers both set one as a matter of course, so its absence suggests the message was assembled by a script.",
+      "advice": "Weak on its own. Note it alongside the other findings.",
+      "evidence": [],
+      "refs": [
+        "RFC 5322 section 3.6.4"
+      ]
+    }
+  ],
+  "suppressors": [],
+  "errors": [],
+  "truncations": [],
+  "notes": []
+}
