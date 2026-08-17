@@ -1,0 +1,159 @@
+BAITTRACE 0.1.0                                             core@2026.08
+------------------------------------------------------------------------
+Risk         CRITICAL                                             94/100
+             #######################################################....
+Source       corpus/malicious/instructor-demo.eml
+Analyzed     offline | identity, headers, auth, urls, attachments | 0 ms
+
+AUTHENTICATION
+[+]          SPF passed (reported)
+[x]          DKIM signature invalid
+[!]          DMARC failed policy: none
+[x]          SPF/DKIM pass is not aligned with From
+
+SENDER
+Subject      Action required: your account will be suspended in 24 hours
+Displayed    Microsoft Support
+Actual       account@micros0ft-login.example
+             ^ suspicious lookalike
+Reply-To     recovery@mail-secure.example
+Date         Tue, 12 Aug 2026 09:14:02 +0000
+
+LINKS
+             3 URLs discovered
+[!]          1 uses an IP address
+             hxxp://198[.]51[.]100[.]23/account/verify?id=8831
+             hxxp://go[.]mail-secure[.]example/redirect?u=hxxp://coll...
+             hxxp://collect[.]example/harvest
+[x]          Anchor text disagrees with the link target
+
+ATTACHMENTS
+             invoice.html  text/html
+[!]          HTML attachment
+[x]          Contains external form submission
+
+REASONS FOR SCORE
+[x]   +12  IDN003  Sender domain resembles a known brand
+             The sending domain micros0ft-login.example contains
+             'micros0ft', which reduces to the same confusable skeleton
+             as Microsoft. micros0ft-login.example is not one of
+             Microsoft's known domains, so the resemblance is not
+             legitimate.
+evidence     header:From  Microsoft Support <account@micros0ft-
+             login.example>
+
+[x]   +12  URL001  Link uses an IP address as the host
+             The link host is the IP address 198.51.100.23, not a domain
+             name. Brands do not send customers to raw addresses.
+evidence     html:a[href]
+             hxxp://198[.]51[.]100[.]23/account/verify?id=8831
+
+[x]   +12  URL003  Anchor text disagrees with the link target
+             The visible text names microsoft.com but the href points at
+             198.51.100.23.
+evidence     html:a[href]
+             hxxp://198[.]51[.]100[.]23/account/verify?id=8831
+
+[x]   +11  ATT003  HTML attachment contains an external form or script
+             The HTML attachment contains a <form>. The form submits to
+             hxxp://collect[.]example/harvest. This is how a credential-
+             harvest page is delivered without a link.
+evidence     attachment:0.1  invoice.html
+
+[x]   +10  AUTH002  DKIM signature is invalid
+             DKIM reported result is fail for d=micros0ft-login.example.
+             The signature does not validate. These results were
+             reported by the receiving gateway and have not been
+             independently verified.
+evidence     header:Authentication-Results  mx.example.com; spf=pass
+             smtp.mailfrom=bounce@mail-secure.example; dkim=fail
+             header.d=micros0ft-login.example; dmarc=fail policy.p=none
+             header.from=micros0ft...
+evidence     header:Received-SPF  pass (mail-secure.example: domain of
+             bounce@mail-secure.example designates 198.51.100.23 as
+             permitted sender)
+
+[x]   +10  AUTH003  DMARC failed or publishes no enforcement
+             DMARC reported result is fail and the published policy is
+             p=none. These results were reported by the receiving
+             gateway and have not been independently verified.
+evidence     header:Authentication-Results  mx.example.com; spf=pass
+             smtp.mailfrom=bounce@mail-secure.example; dkim=fail
+             header.d=micros0ft-login.example; dmarc=fail policy.p=none
+             header.from=micros0ft...
+evidence     header:Received-SPF  pass (mail-secure.example: domain of
+             bounce@mail-secure.example designates 198.51.100.23 as
+             permitted sender)
+
+[x]    +9  AUTH005  SPF or DKIM passed for a domain that does not match
+                    From
+             Authentication passed for mail-secure.example, but the
+             message claims to be from micros0ft-login.example. The pass
+             does not cover the identity a reader sees. These results
+             were reported by the receiving gateway and have not been
+             independently verified.
+evidence     header:Authentication-Results  mx.example.com; spf=pass
+             smtp.mailfrom=bounce@mail-secure.example; dkim=fail
+             header.d=micros0ft-login.example; dmarc=fail policy.p=none
+             header.from=micros0ft...
+evidence     header:Received-SPF  pass (mail-secure.example: domain of
+             bounce@mail-secure.example designates 198.51.100.23 as
+             permitted sender)
+
+[x]    +8  IDN004  Display name claims a brand the domain does not
+                   belong to
+             The display name claims Microsoft, but the message was sent
+             from micros0ft-login.example, which is not one of
+             Microsoft's known domains.
+evidence     header:From  Microsoft Support <account@micros0ft-
+             login.example>
+
+[!]    +4  HDR005  Return-Path does not match the sender
+             Bounces for this message go to mail-secure.example, but the
+             reader sees micros0ft-login.example as the sender.
+             Legitimate providers do this too, so weigh it together with
+             the authentication and identity findings.
+evidence     header:Return-Path  bounce@mail-secure.example
+evidence     header:From  Microsoft Support <account@micros0ft-
+             login.example>
+
+[!]    +4  IDN002  Reply-To points at a different organisation
+             A reply would be delivered to recovery@mail-secure.example
+             at mail-secure.example, not to micros0ft-login.example.
+             Redirecting replies is how a conversation is moved
+             somewhere the real sender cannot see it.
+evidence     header:From  Microsoft Support <account@micros0ft-
+             login.example>
+evidence     header:Reply-To  Account Recovery <recovery@mail-
+             secure.example>
+
+[!]    +2  HDR003  Message-ID domain does not match the sender
+             The Message-ID was generated at mail-secure.example while
+             the message claims to be from micros0ft-login.example. This
+             is normal for mail sent through a service provider, so it
+             only matters alongside the other findings here.
+evidence     header:Message-ID
+             <5f2a9c04-1b77-4a10-9d3e-77bb0c2e1a55@mail-secure.example>
+evidence     header:From  Microsoft Support <account@micros0ft-
+             login.example>
+
+
+SCORING
+identity     ################  raw 46.8, cap 25 (capped)
+auth         ################  raw 45.7, cap 30 (capped)
+urls         ################  raw 28.6, cap 25 (capped)
+attachments  ##########......  raw 16.2, cap 25
+headers      ################  raw 12.8, cap 10 (capped)
+             Points shown against each finding are attributed
+             contributions that sum to the score, not literal addends;
+             see docs/SCORING.md.
+
+NOT ANALYZED
+             This release does not yet examine body wording, delivery
+             path. The highest score reachable from the evidence classes
+             that did run is 96/100, so a low score reflects what was
+             checked rather than a clean bill of health.
+
+RECOMMENDED ACTION
+             Do not interact with this email. Do not click any link,
+             open any attachment, or reply. Escalate for analyst review.

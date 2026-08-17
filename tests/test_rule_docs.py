@@ -70,9 +70,9 @@ def test_each_page_title_matches_the_rule_title(rule_id: str) -> None:
 
 
 def test_rule_ids_follow_the_naming_scheme() -> None:
-    pattern = re.compile(r"^[A-Z]{3}[0-9]{3}$")
+    pattern = re.compile(r"^[A-Z]{3,4}[0-9]{3}$")
     bad = [rule_id for rule_id in implemented_ids() if not pattern.match(rule_id)]
-    assert not bad, f"rule IDs must be three letters then three digits: {bad}"
+    assert not bad, f"rule IDs must be three or four letters then three digits: {bad}"
 
 
 def test_every_rule_carries_advice_and_a_false_positive_note() -> None:

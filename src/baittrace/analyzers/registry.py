@@ -23,14 +23,23 @@ from .base import Analyzer
 
 ENTRY_POINT_GROUP = "baittrace.analyzers"
 
-_BUILTIN_IDS = frozenset({"identity", "headers"})
+_BUILTIN_IDS = frozenset({"identity", "headers", "auth", "urls", "attachments"})
 
 
 def _builtins() -> list[Analyzer]:
+    from .attachments import AttachmentAnalyzer
+    from .auth import AuthAnalyzer
     from .headers import HeaderAnalyzer
     from .identity import IdentityAnalyzer
+    from .urls import UrlAnalyzer
 
-    return [IdentityAnalyzer(), HeaderAnalyzer()]
+    return [
+        IdentityAnalyzer(),
+        HeaderAnalyzer(),
+        AuthAnalyzer(),
+        UrlAnalyzer(),
+        AttachmentAnalyzer(),
+    ]
 
 
 def _load_entry_point(entry: EntryPoint) -> Analyzer | None:

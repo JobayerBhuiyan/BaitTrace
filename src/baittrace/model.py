@@ -21,8 +21,23 @@ from __future__ import annotations
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import StrEnum
 
 from .limits import LimitsReport
+
+
+class AuthState(StrEnum):
+    """Five-state authentication outcome. Never a boolean.
+
+    ``unverifiable`` is the important one: a rotated DKIM selector cannot be
+    checked, and reporting that as ``fail`` would be a false accusation.
+    """
+
+    PASS = "pass"  # noqa: S105 - authentication result, not a credential
+    FAIL = "fail"
+    ABSENT = "absent"
+    UNVERIFIABLE = "unverifiable"
+    UNTRUSTED = "untrusted"
 
 
 @dataclass(frozen=True, slots=True)
@@ -145,6 +160,8 @@ class Url:
     location: str = "body"
     is_punycode: bool = False
     unicode_host: str = ""
+    userinfo: str = ""
+    is_ip: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -163,6 +180,9 @@ class Attachment:
     sha256: str
     part_path: str
     is_inline: bool = False
+    has_html_form: bool = False
+    has_script: bool = False
+    form_action: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -194,18 +214,25 @@ class Routing:
 
 @dataclass(frozen=True, slots=True)
 class AuthResults:
-    """Authentication headers as written.
+    """Authentication headers, plus the reported SPF/DKIM/DMARC outcomes.
 
-    Populated but not interpreted in M1. The AUTH analyzer arrives in M4 and
-    distinguishes pass, fail, unverifiable, absent, and untrusted, because DKIM
-    keys rotate and reporting an unresolvable selector as "invalid" would be a
-    false accusation.
+    ``spf`` / ``dkim`` / ``dmarc`` are parsed from Authentication-Results or
+    Received-SPF when present. They are *reported* by the receiving MTA, not
+    independently verified, until ``--online`` overlays a checked result.
     """
 
     authentication_results: tuple[str, ...] = ()
     received_spf: tuple[str, ...] = ()
     dkim_signatures: tuple[str, ...] = ()
     arc_headers: tuple[str, ...] = ()
+    spf: AuthState = AuthState.ABSENT
+    dkim: AuthState = AuthState.ABSENT
+    dmarc: AuthState = AuthState.ABSENT
+    dmarc_policy: str = ""
+    spf_domain: str = ""
+    dkim_domain: str = ""
+    dkim_selector: str = ""
+    from_domain: str = ""
 
     @property
     def present(self) -> bool:

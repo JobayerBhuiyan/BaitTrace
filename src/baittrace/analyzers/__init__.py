@@ -4,10 +4,9 @@ Each analyzer owns one evidence class, one rule-ID namespace, one test module
 and one set of documentation pages. Adding detection means adding an analyzer
 or a rule to one, never editing the pipeline.
 
-Present in M1: :mod:`~baittrace.analyzers.identity` (IDN) and
-:mod:`~baittrace.analyzers.headers` (HDR). The URL, attachment, content,
-routing and authentication analyzers arrive in later milestones; see
-``docs/ROADMAP.md``.
+Present in this release: identity (IDN), headers (HDR), authentication (AUTH),
+urls (URL) and attachments (ATT). Content and routing analyzers arrive later;
+see ``docs/ROADMAP.md``.
 """
 
 from .base import Analyzer, Context

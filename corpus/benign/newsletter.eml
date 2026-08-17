@@ -8,6 +8,10 @@ Reply-To: <no-reply@mailprovider.example>
 Subject: This week: five things worth reading
 Date: Mon, 11 Aug 2026 06:30:10 +0000
 Message-ID: <20260811063010.21947@o3.mailprovider.example>
+Authentication-Results: mx.example.com;
+	spf=pass smtp.mailfrom=bounces+21947-news@bounce.mailprovider.example;
+	dkim=pass header.d=newsletter.example;
+	dmarc=pass header.from=newsletter.example
 List-Id: The Weekly Dispatch <dispatch.newsletter.example>
 List-Unsubscribe: <https://newsletter.example/unsubscribe?id=21947>
 Precedence: bulk

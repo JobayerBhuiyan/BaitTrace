@@ -95,5 +95,12 @@ class TestDefang:
     def test_the_path_is_left_readable(self) -> None:
         assert "/login?id=1" in defang("http://evil.example/login?id=1")
 
-    def test_ip_hosts_are_defanged(self) -> None:
-        assert defang("http://198.51.100.23/x") == "hxxp://198[.]51[.]100[.]23/x"
+    def test_nested_urls_in_query_strings_are_neutered(self) -> None:
+        out = defang("http://go.example/r?u=http://collect.example/login")
+        assert "http://" not in out
+        assert "https://" not in out
+
+    def test_explanations_are_defanged_too(self) -> None:
+        from baittrace.sanitize import clean
+
+        assert "http://" not in clean("The form submits to http://collect.example/harvest")

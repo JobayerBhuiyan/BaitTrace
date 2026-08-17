@@ -13,7 +13,7 @@ flowchart LR
     M5 --> M6["M6 package and host"]
 ```
 
-## M1 — this release
+## M1 — pipeline (shipped)
 
 Ingest, bounded parse, canonical `Message`, identity analyzer (IDN001–IDN005,
 IDN900), header analyzer (HDR001–HDR005), scoring engine, text and JSON
@@ -33,23 +33,20 @@ JSON document as something other people depend on.
 **Done when** a consumer can validate every report against `baittrace schema`
 and pin a rulepack.
 
-## M3 — the five-minute demo
+## M3 — the five-minute demo (this pass)
 
-`URL` and `ATT` analyzers, defanging already in place, `baittrace explain`
-already in place, rule docs for the new IDs. This is the demo you put at the
-top of a résumé: lookalike sender, HTML attachment with an external form,
-redirect-shaped URL, all explained.
+`URL` and `ATT` analyzers, AUTH reported + verified modes, sectioned report
+matching the instructor mock. `baittrace scan corpus/malicious/instructor-demo.eml`
+covers sender, SPF/DKIM/DMARC, links and HTML attachments.
 
-**Done when** the five-minute demo runs end to end and the benign corpus is
-still under a 2 percent false-positive rate at the HIGH threshold.
+**Done when** the five-minute demo runs end to end offline and the benign corpus
+is still under 25.
 
 ## M4 — authentication and routing
 
-`AUTH` in two modes: reported (parse `Authentication-Results` offline) and
-verified (`--online` fetches DKIM keys, SPF, DMARC). Five-state model: pass,
-fail, unverifiable, absent, untrusted. `RTE` with an explicit trust boundary.
-`Resolver` grows a live implementation and a replay implementation.
-`--record` / `--replay` make online scans reproducible.
+`AUTH` verified mode is in M3. M4 adds `RTE` with an explicit trust boundary,
+a replay `Resolver`, and `--record` / `--replay` so online scans are
+reproducible.
 
 **Done when** DMARC alignment is correct on a hand-checked fixture set, and
 an online scan can be replayed offline from a recorded bundle.

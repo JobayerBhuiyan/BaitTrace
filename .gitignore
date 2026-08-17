@@ -20,6 +20,9 @@
 scan-output/
 evidence-*.json
 
+# Local Firebase CLI diagnostics can include account and project metadata.
+firebase-debug.log
+
 # Python
 __pycache__/
 *.py[cod]

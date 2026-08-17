@@ -71,9 +71,10 @@ Three properties come out of this shape:
 
 ### 3. Trust factor
 
-Negative signals (suppressors) — today, an operator allowlist (`IDN900`) —
-accumulate into a trust factor \(T\) clamped to `[0, 0.9]`. The final score
-is \(\mathrm{round}(100 \cdot \mathrm{combined} \cdot (1 - T))\).
+Negative signals (suppressors) — an operator allowlist (`IDN900`) and a
+DMARC-aligned DKIM pass on a known brand (`AUTH900`) — accumulate into a
+trust factor \(T\) clamped to `[0, 0.9]`. The final score is
+\(\mathrm{round}(100 \cdot \mathrm{combined} \cdot (1 - T))\).
 
 Suppressors can never fully clear a message. An allowlisted domain can still
 be spoofed while DKIM verification is unavailable.
@@ -99,10 +100,10 @@ underlying maths is right.
 The rulepack flag `combination = "additive"` exists for anyone who wants
 strict addition. It is easier to explain and easier to game.
 
-## Worked example: `brand-lookalike.eml`
+## Worked example: identity and headers alone
 
-The synthetic sample in `corpus/malicious/brand-lookalike.eml` fires five
-indicators. Approximate raw strengths (weight × confidence):
+The noisy-OR shape is easiest to see with two classes. Take the identity and
+header findings from `corpus/malicious/brand-lookalike.eml`:
 
 | Finding | Category | Raw |
 |---------|----------|-----|
@@ -119,14 +120,18 @@ Headers raw ≈ 12.8 against a cap of 10, so \(p_{\mathrm{headers}} = 1.0\).
 \mathrm{combined} = 1 - (1 - 0.50 \cdot 1)(1 - 0.20 \cdot 1) = 1 - 0.40 = 0.60
 \]
 
-No suppressors, so the score is 60, band HIGH. The highest reachable score
-from the two implemented classes is also 60, which the report states under
-**NOT ANALYZED**.
+That is 60 from those two classes alone. A full scan of the same sample also
+runs authentication, links and attachments, so the live score is higher — the
+arithmetic above is the illustration, not the current golden file.
 
-The displayed `+24 / +15 / +8 / +8 / +5` sum to 60. Identity's leave-one-out
-delta is most of the score because its ceiling is 0.50; headers contribute
-the rest because their ceiling is 0.20. Within identity, IDN003 takes the
-largest share because it has the largest weighted strength.
+A full scan of `corpus/malicious/instructor-demo.eml` saturates several
+ceilings at once (lookalike From, DKIM fail, unaligned SPF pass, IP URL,
+HTML form attachment) and lands in HIGH or CRITICAL, which is the five-minute
+demo.
+
+The highest reachable score from the five implemented classes is about 96
+(content and routing still missing). The report states the maximum rather
+than letting 100 be assumed.
 
 ## Why not simple addition
 

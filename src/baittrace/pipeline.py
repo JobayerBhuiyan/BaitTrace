@@ -17,12 +17,13 @@ from ._version import __version__
 from .analyzers.base import Analyzer, Context
 from .analyzers.registry import discover, select
 from .config import Config
+from .errors import ConfigError
 from .ingest import RawInput, read_input
 from .limits import Budget
 from .model import Message
 from .parse import parse, parse_bytes
 from .report import Report, ToolInfo
-from .resolver import NullResolver, Resolver
+from .resolver import LiveResolver, NullResolver, Resolver, online_dependencies_available
 from .scoring import Rulepack, load_rulepack, score
 from .signal import AnalyzerError, Category, Signal
 
@@ -81,10 +82,25 @@ def max_reachable_score(categories: Collection[Category], rulepack: Rulepack) ->
     return round(100.0 * (1.0 - survival))
 
 
+def _choose_resolver(cfg: Config, resolver: Resolver | None) -> Resolver:
+    if resolver is not None:
+        return resolver
+    if cfg.online:
+        if not online_dependencies_available():
+            raise ConfigError(
+                "online verification requires the optional extra: pip install 'baittrace[online]'"
+            )
+        return LiveResolver()
+    if cfg.follow_redirects:
+        return LiveResolver()
+    return NullResolver()
+
+
 def analyze(
     message: Message,
     config: Config | None = None,
     resolver: Resolver | None = None,
+    raw_bytes: bytes = b"",
 ) -> Report:
     """Score an already-parsed message.
 
@@ -96,8 +112,9 @@ def analyze(
 
     ctx = Context(
         config=cfg,
-        resolver=resolver or NullResolver(),
+        resolver=_choose_resolver(cfg, resolver),
         budget=Budget(cfg.limits.budget_seconds),
+        raw_bytes=raw_bytes,
     )
 
     analyzers = select(
@@ -141,7 +158,7 @@ def scan(
     cfg = config or Config()
     raw: RawInput = read_input(target, cfg.limits)
     message = parse(raw, cfg.limits)
-    return analyze(message, cfg, resolver)
+    return analyze(message, cfg, resolver, raw_bytes=raw.data)
 
 
 def scan_bytes(
@@ -153,7 +170,7 @@ def scan_bytes(
     """Score a message already held in memory."""
     cfg = config or Config()
     message = parse_bytes(data, source=source, limits=cfg.limits)
-    return analyze(message, cfg, resolver)
+    return analyze(message, cfg, resolver, raw_bytes=data)
 
 
 __all__ = ["Report", "analyze", "scan", "scan_bytes"]

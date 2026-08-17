@@ -7,6 +7,10 @@ To: buyer@example.com
 Subject: Your order 5512-A has shipped
 Date: Fri, 08 Aug 2026 17:22:38 +0000
 Message-ID: <order-5512-A@shop.example>
+Authentication-Results: mx.example.com;
+	spf=pass smtp.mailfrom=orders@shop.example;
+	dkim=pass header.d=shop.example;
+	dmarc=pass header.from=shop.example
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 

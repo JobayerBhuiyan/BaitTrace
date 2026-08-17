@@ -30,8 +30,8 @@ through `sanitize.py`.
 | Clickable delivery | A live `https://` URL in a report that an analyst pastes into a ticket | Every URL is defanged (`hxxps://…[.]example`) in every output format. Tests assert `http://` never appears in a text report |
 | Path traversal | Attachment filename `../../.ssh/authorized_keys` during extraction | M1 never writes attachments to disk. When `--extract` arrives, sanitize to a basename under a created directory |
 | ReDoS | Crafted header defeating a backtracking regex | Avoid nested quantifiers, bound repetition, property-test the parser, per-message time budget |
-| Beaconing | Fetching a tracking pixel or following a link tells the attacker the mail was read | Offline default. M1 has no network path at all: `NullResolver` returns `UNAVAILABLE`. Tests monkeypatch `socket` to make a connection fatal |
-| SSRF | Redirect chain pointed at `169.254.169.254` | No HTTP client in this release. When `--follow-redirects` arrives: scheme allowlist, block loopback/private/link-local/metadata, cap hops, no cookies |
+| Beaconing | Fetching a tracking pixel or following a link tells the attacker the mail was read | Offline default. `NullResolver` returns `UNAVAILABLE`. `--follow-redirects` is off and `--help` states why. Tests monkeypatch `socket` to make a default scan's connection fatal |
+| SSRF | Redirect chain pointed at `169.254.169.254` | `--follow-redirects` uses stdlib `urllib` only: scheme allowlist http/https, resolve host and block loopback/private/link-local/metadata before and after DNS, max 5 hops, no cookies, byte-capped HEAD, never fetch bodies |
 | Unsafe deserialization | Config or cache as YAML or pickle | TOML via `tomllib` for config. Never pickle |
 | Supply chain | Malicious dependency or unpinned Action | Zero runtime dependencies. Actions pinned to commit SHAs. Dependabot. Minimal `permissions` on CI jobs |
 | Sample leakage | Real phish with victim PII committed to a public repo | Synthetic malicious corpus only. `.gitignore` plus a pre-commit hook blocking `.eml` outside `corpus/`. `--redact` output mode |
@@ -97,8 +97,9 @@ Analyse a real sample locally. Do not commit it.
 
 ## What this release does not claim
 
-M1 does not sandbox plugins, does not isolate the parser in a child process,
-and does not have an HTTP client to harden. Process isolation and SSRF guards
-belong to the hosted service (M6) and the online resolver (M4) respectively.
-Claiming them now would be a lie; designing the seams so they can be added
-without a rewrite is the actual commitment.
+M1 does not sandbox plugins and does not isolate the parser in a child process.
+`--follow-redirects` is SSRF-hardened as described above; `--online` performs
+DNS TXT lookups only (no HTTP, no threat-intel APIs). Process isolation belongs
+to the hosted service (M6). Claiming a plugin sandbox now would be a lie;
+designing the seams so it can be added without a rewrite is the actual
+commitment.

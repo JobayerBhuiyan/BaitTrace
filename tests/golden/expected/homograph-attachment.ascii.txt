@@ -1,37 +1,60 @@
 BAITTRACE 0.1.0                                             core@2026.08
 ------------------------------------------------------------------------
-Risk         HIGH                                                 60/100
-             ###################################........................
+Risk         CRITICAL                                             82/100
+             ################################################...........
 Source       corpus/malicious/homograph-attachment.eml
-Analyzed     offline | identity, headers | 0 ms
+Analyzed     offline | identity, headers, auth, urls, attachments | 0 ms
 
-MESSAGE
+AUTHENTICATION
+[-]          SPF absent
+[-]          DKIM absent
+[-]          DMARC absent
+[-]          No authentication results on this message
+
+SENDER
 Subject      Your receipt from Apple
 Displayed    Apple ID
 Actual       noreply@xn--pple-43d.example
+             punycode or mixed-script domain
 Date         Sat, 01 Mar 2025 11:00:00 +0000
-Attachments  1 found
+
+LINKS
+             1 URL discovered
+             hxxp://collect[.]example/harvest
+
+ATTACHMENTS
              invoice<RLO>gnp.html  text/html
+[!]          HTML attachment
+[x]          Contains external form submission
+[x]          Filename contains a right-to-left override
 
-FINDINGS
-             4 indicators
+REASONS FOR SCORE
+[x]   +18  ATT005  Filename contains a right-to-left override
+             The filename contains a Unicode direction override, which
+             is used to make invoice.exe render as invoiceexe.png (or
+             similar) in a file list.
+evidence     attachment:0.1  invoice<RLO>gnp.html
 
-[x]   +25  IDN004  Display name claims a brand the domain does not
+[x]   +18  IDN004  Display name claims a brand the domain does not
                    belong to
              The display name claims Apple, but the message was sent
              from xn--pple-43d.example, which is not one of Apple's
              known domains.
 evidence     header:From  Apple ID <noreply@xn--pple-43d.example>
-             display name claims Apple
 
-[x]   +23  IDN005  Sender domain uses punycode or mixes scripts
+[x]   +17  ATT003  HTML attachment contains an external form or script
+             The HTML attachment contains a <form>. The form submits to
+             hxxp://collect[.]example/harvest. This is how a credential-
+             harvest page is delivered without a link.
+evidence     attachment:0.1  invoice<RLO>gnp.html
+
+[x]   +17  IDN005  Sender domain uses punycode or mixes scripts
              xn--pple-43d.example is an internationalised domain that
              decodes to '<U+0430>pple.example', which mixes writing
              systems within the name.
 evidence     header:From  Apple ID <noreply@xn--pple-43d.example>
-             decodes to <U+0430>pple.example
 
-[!]    +7  HDR004  Date header is malformed or contradicts delivery
+[!]    +5  HDR004  Date header is malformed or contradicts delivery
              The Date header says 2025-03-01T11:00:00+00:00 but the
              delivery chain timestamps the message at
              2026-08-14T03:41:52+00:00, a difference of 530 day(s). The
@@ -39,7 +62,12 @@ evidence     header:From  Apple ID <noreply@xn--pple-43d.example>
 evidence     header:Date  Sat, 01 Mar 2025 11:00:00 +0000
 evidence     header:Received  2026-08-14T03:41:52+00:00
 
-[!]    +5  HDR003  Message-ID domain does not match the sender
+[-]    +4  AUTH004  Authentication results are absent
+             No Authentication-Results, Received-SPF or DKIM-Signature
+             header is present, so SPF, DKIM and DMARC cannot be
+             evaluated from this message alone.
+
+[!]    +3  HDR003  Message-ID domain does not match the sender
              The Message-ID was generated at relay.example while the
              message claims to be from xn--pple-43d.example. This is
              normal for mail sent through a service provider, so it only
@@ -47,22 +75,22 @@ evidence     header:Received  2026-08-14T03:41:52+00:00
 evidence     header:Message-ID  <receipt-4471@relay.example>
 evidence     header:From  Apple ID <noreply@xn--pple-43d.example>
 
+
 SCORING
+attachments  ################  raw 33.3, cap 25 (capped)
 identity     ################  raw 29.2, cap 25 (capped)
 headers      ################  raw 11.2, cap 10 (capped)
+auth         ###.............  raw 5.4, cap 30
              Points shown against each finding are attributed
              contributions that sum to the score, not literal addends;
              see docs/SCORING.md.
 
 NOT ANALYZED
-             This release does not yet examine links, attachments, SPF,
-             DKIM and DMARC, body wording, delivery path. The highest
-             score reachable from the evidence classes that did run is
-             60/100, so a low score reflects what was checked rather
-             than a clean bill of health.
+             This release does not yet examine body wording, delivery
+             path. The highest score reachable from the evidence classes
+             that did run is 96/100, so a low score reflects what was
+             checked rather than a clean bill of health.
 
 RECOMMENDED ACTION
-             Treat this as phishing until proven otherwise. Do not click
-             links or open attachments. Verify with the supposed sender
-             through a channel you already trust, not one this message
-             provides.
+             Do not interact with this email. Do not click any link,
+             open any attachment, or reply. Escalate for analyst review.

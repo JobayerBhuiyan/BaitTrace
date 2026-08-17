@@ -37,8 +37,9 @@ synthetic malicious corpus, every sample scores at or above 50. Every point of
 every score is traceable to a documented rule ID. Offline runs are
 byte-for-byte reproducible.
 
-This release (M1) implements ingest, parse, identity, headers, scoring, and
-text / JSON rendering. The other analyzers are designed here and arrive later;
+This release implements ingest, parse, identity, headers, authentication
+(reported + optional verified), links, attachments, scoring, and text / JSON
+rendering. Content and routing analyzers are designed here and arrive later;
 see [ROADMAP.md](ROADMAP.md).
 
 ## 2. Architecture
@@ -54,8 +55,14 @@ flowchart TD
     Model --> Registry["analyzers/registry.py"]
     Registry --> IDN["analyzers/identity.py"]
     Registry --> HDR["analyzers/headers.py"]
+    Registry --> AUTH["analyzers/auth.py"]
+    Registry --> URL["analyzers/urls.py"]
+    Registry --> ATT["analyzers/attachments.py"]
     IDN --> Signals["Signal set"]
     HDR --> Signals
+    AUTH --> Signals
+    URL --> Signals
+    ATT --> Signals
     Signals --> Scoring["scoring.py"]
     Scoring --> Verdict["Verdict"]
     Verdict --> Text["render/text.py"]
@@ -64,10 +71,11 @@ flowchart TD
 ```
 
 The `Resolver` is the only component permitted to perform I/O during analysis,
-and it is injected. In M1 it is `NullResolver`, which returns `UNAVAILABLE`
-for every query. Analyzers are therefore written against missing data from the
-first line of code: the offline path is the normal path, not a degraded
-special case.
+and it is injected. The default is `NullResolver`, which returns `UNAVAILABLE`
+for every query. `--online` (optional extra `dnspython` + `dkimpy`) and
+`--follow-redirects` (stdlib HTTP, SSRF-hardened) construct a `LiveResolver`.
+Analyzers are written against missing data from the first line of code: the
+offline path is the normal path, not a degraded special case.
 
 ```mermaid
 sequenceDiagram
@@ -138,7 +146,7 @@ sandbox, which is why `--no-plugins` exists.
 ### Rule identity
 
 Every rule has a stable ID in its analyzer's namespace: `IDN0xx`, `HDR0xx`,
-and later `AUTH0xx`, `URL0xx`, `ATT0xx`, `CNT0xx`, `RTE0xx`. Each ID has
+`AUTH0xx`, `URL0xx`, `ATT0xx`, and later `CNT0xx`, `RTE0xx`. Each ID has
 exactly one file at `docs/rules/<ID>.md`. `tests/test_rule_docs.py` asserts a
 bijection between emitted IDs and those files.
 
@@ -146,20 +154,20 @@ IDs are append-only. A retired rule is marked deprecated in its doc and stops
 firing; the number is never reused, so historical JSON reports remain
 interpretable.
 
-Suppressors (`IDN900` in this release) argue *against* suspicion. A tool that
+Suppressors (`IDN900`, `AUTH900`) argue *against* suspicion. A tool that
 can only ever escalate is not a triage tool.
 
 ### Planned analyzers
 
 | Prefix | Analyzer | Status | Network |
 |--------|----------|--------|---------|
-| `IDN` | Sender identity | **M1** | no |
-| `HDR` | Header hygiene | **M1** | no |
-| `URL` | Links | M3 | optional |
-| `ATT` | Attachments | M3 | optional |
-| `AUTH` | SPF / DKIM / DMARC | M4 | optional |
-| `RTE` | Routing | M4 | optional |
-| `CNT` | Content | M5 | no |
+| `IDN` | Sender identity | **this release** | no |
+| `HDR` | Header hygiene | **this release** | no |
+| `URL` | Links | **this release** | optional (`--follow-redirects`) |
+| `ATT` | Attachments | **this release** | no |
+| `AUTH` | SPF / DKIM / DMARC | **this release** | optional (`--online`) |
+| `RTE` | Routing | later | optional |
+| `CNT` | Content | later | no |
 
 ## 5. Scoring
 
@@ -171,19 +179,23 @@ Changing a weight is a rulepack version bump, not a silent behaviour change.
 
 Bands: BENIGN 0–24, SUSPICIOUS 25–49, HIGH 50–74, CRITICAL 75–100.
 
-With only identity (ceiling 0.50) and headers (ceiling 0.20) implemented, the
-highest reachable score is `round(100 × (1 − 0.5 × 0.8)) = 60`. The report
-states this rather than letting 100 be assumed.
+With identity (0.50), authentication (0.55), URLs (0.50), attachments (0.50)
+and headers (0.20) implemented, the highest reachable score is about 96. Content
+and routing still missing is why the report states a maximum rather than
+letting 100 be assumed.
 
 ## 6. Rendering
 
-One `Renderer` protocol, two implementations in M1 (`text`, `json`). Markdown
+One `Renderer` protocol, two implementations (`text`, `json`). Markdown
 and HTML arrive later.
 
 The text renderer uses a fixed 72-column grid: label columns 1–11, two-space
 gutter, value columns 14–72 with a hanging indent. Severity glyphs sit in
-column 1. Colour is never load-bearing: every severity is also a glyph and a
-word, and colour is disabled when stdout is not a TTY or `NO_COLOR` is set.
+column 1. The sectioned layout — Authentication, Sender, Links, Attachments,
+Reasons for score — is the instructor mock: a reader sees what is wrong before
+they see the rule catalogue. Colour is never load-bearing: every severity is
+also a glyph and a word, and colour is disabled when stdout is not a TTY or
+`NO_COLOR` is set.
 
 Two safety rules: **defang every URL** (`hxxps://micros0ft-login[.]example`)
 and **sanitize every attacker-controlled string** before printing. Display
@@ -232,19 +244,21 @@ the project. Any heuristic can find phishing if it flags everything.
 
 ```
 src/baittrace/          package
-  analyzers/            identity, headers, registry
+  analyzers/            identity, headers, auth, urls, attachments, registry
   render/               text, json, layout grid
   rulepacks/            core-2026.08.toml
-  data/                 brands, confusables, public suffix list, freemail
+  data/                 brands, confusables, public suffix list, freemail, shorteners
 tests/                  unit, property, golden, limits, corpus
 corpus/                 synthetic samples plus generator.py
 docs/                   this file, scoring, threat model, roadmap, rules/
 .github/                CI, Dependabot, issue and PR templates
 ```
 
-Runtime dependency count: zero. Dev: pytest, hypothesis, jsonschema, ruff,
-mypy, pre-commit. Python is the right language because of the `email`
-standard library; rewriting that in Go or Rust would be most of the project.
+Runtime dependency count: zero. Optional extra `baittrace[online]` adds
+`dnspython` and `dkimpy` for `--online` verification. Dev: pytest, hypothesis,
+jsonschema, ruff, mypy, pre-commit. Python is the right language because of
+the `email` standard library; rewriting that in Go or Rust would be most of
+the project.
 
 ## 11. Risks and alternatives
 

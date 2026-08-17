@@ -1,0 +1,28 @@
+# Known URL shorteners. Data, not code: extend by pull request.
+# Matching is on the registrable domain or the full host.
+bit.ly
+bitly.com
+t.co
+tinyurl.com
+goo.gl
+ow.ly
+is.gd
+buff.ly
+rebrand.ly
+cutt.ly
+tiny.cc
+lnkd.in
+db.tt
+qr.ae
+bit.do
+shorturl.at
+rb.gy
+v.gd
+trib.al
+ow.ly
+ift.tt
+soo.gd
+s.id
+bl.ink
+short.io
+tiny.one

@@ -3,21 +3,26 @@ BAITTRACE 0.1.0                                             core@2026.08
 Risk         BENIGN                                               16/100
              #########..................................................
 Source       corpus/benign/newsletter.eml
-Analyzed     offline | identity, headers | 0 ms
+Analyzed     offline | identity, headers, auth, urls, attachments | 0 ms
 
-MESSAGE
+AUTHENTICATION
+[+]          SPF passed (reported)
+[+]          DKIM signature valid (reported)
+[+]          DMARC passed (reported)
+
+SENDER
 Subject      This week: five things worth reading
 Displayed    The Weekly Dispatch
 Actual       news@newsletter.example
 Reply-To     no-reply@mailprovider.example
 Date         Mon, 11 Aug 2026 06:30:10 +0000
-Links        2 found
+
+LINKS
+             2 URLs discovered
              hxxps://newsletter[.]example/issues/214
              hxxps://newsletter[.]example/unsubscribe?id=21947
 
-FINDINGS
-             3 indicators
-
+REASONS FOR SCORE
 [!]    +6  HDR005  Return-Path does not match the sender
              Bounces for this message go to mailprovider.example, but
              the reader sees newsletter.example as the sender.
@@ -53,6 +58,7 @@ evidence     header:Message-ID
              <20260811063010.21947@o3.mailprovider.example>
 evidence     header:From  The Weekly Dispatch <news@newsletter.example>
 
+
 SCORING
 headers      ########........  raw 5.0, cap 10
 identity     ##..............  raw 3.2, cap 25
@@ -61,11 +67,10 @@ identity     ##..............  raw 3.2, cap 25
              see docs/SCORING.md.
 
 NOT ANALYZED
-             This release does not yet examine links, attachments, SPF,
-             DKIM and DMARC, body wording, delivery path. The highest
-             score reachable from the evidence classes that did run is
-             60/100, so a low score reflects what was checked rather
-             than a clean bill of health.
+             This release does not yet examine body wording, delivery
+             path. The highest score reachable from the evidence classes
+             that did run is 96/100, so a low score reflects what was
+             checked rather than a clean bill of health.
 
 RECOMMENDED ACTION
              No strong indicators were found. Ordinary caution still

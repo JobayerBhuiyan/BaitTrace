@@ -6,20 +6,23 @@
     "rulepack": "core@2026.08"
   },
   "scan": {
-    "id": "f3e7e44a87513f30",
+    "id": "981887dcb3f151ea",
     "duration_ms": 0,
     "online": false,
     "analyzers": [
       "identity",
-      "headers"
+      "headers",
+      "auth",
+      "urls",
+      "attachments"
     ],
     "degraded": false,
-    "max_reachable_score": 60
+    "max_reachable_score": 96
   },
   "input": {
     "source": "corpus/benign/internal-memo.eml",
-    "sha256": "f3e7e44a87513f30360705062711b79cbe4b96ec20523ec7d0de21bc2ac62d51",
-    "size_bytes": 622
+    "sha256": "981887dcb3f151eae37b16aa9ef8ae87e795f0ede76e252adef4673822a225e2",
+    "size_bytes": 784
   },
   "verdict": {
     "score": 0,

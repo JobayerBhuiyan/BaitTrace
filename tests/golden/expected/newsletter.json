@@ -6,20 +6,23 @@
     "rulepack": "core@2026.08"
   },
   "scan": {
-    "id": "03abfa182e813055",
+    "id": "394a6bf11749fdaf",
     "duration_ms": 0,
     "online": false,
     "analyzers": [
       "identity",
-      "headers"
+      "headers",
+      "auth",
+      "urls",
+      "attachments"
     ],
     "degraded": false,
-    "max_reachable_score": 60
+    "max_reachable_score": 96
   },
   "input": {
     "source": "corpus/benign/newsletter.eml",
-    "sha256": "03abfa182e813055d55e0e7c155d8a4d7a474935ef3adc48e3803cab86c4809f",
-    "size_bytes": 1021
+    "sha256": "394a6bf11749fdaf5973592725b1166887ec324b4ce53dc08e0caa89421e1416",
+    "size_bytes": 1220
   },
   "verdict": {
     "score": 16,

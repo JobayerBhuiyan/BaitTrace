@@ -137,7 +137,7 @@ _SIGNAL_SCHEMA: dict[str, Any] = {
     "type": "object",
     "required": ["id", "category", "title", "severity", "confidence", "contribution"],
     "properties": {
-        "id": {"type": "string", "pattern": "^[A-Z]{3}[0-9]{3}$"},
+        "id": {"type": "string", "pattern": "^[A-Z]{3,4}[0-9]{3}$"},
         "category": {
             "type": "string",
             "enum": [

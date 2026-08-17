@@ -7,11 +7,11 @@ using confusable skeletons rather than a hand-maintained list of tricks, so
 the same code path.
 
 One deliberate omission: recognising ``microsoft.com`` in ``From`` does **not**
-reduce the score. Without DKIM verification the ``From`` header is a free-text
-field that anyone can write, so treating it as evidence of legitimacy would
-turn the easiest forgery into a discount. Trust is only granted through the
-operator's explicit allowlist (IDN900) until the AUTH analyzer lands in M4 and
-can verify a signature.
+reduce the score. Without a verified aligned DKIM signature the ``From`` header
+is a free-text field that anyone can write, so treating it as evidence of
+legitimacy would turn the easiest forgery into a discount. Trust is granted
+through the operator's explicit allowlist (IDN900) or a DMARC-aligned DKIM pass
+on a known brand (AUTH900).
 """
 
 from __future__ import annotations

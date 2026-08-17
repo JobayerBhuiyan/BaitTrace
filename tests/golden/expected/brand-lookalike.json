@@ -11,10 +11,13 @@
     "online": false,
     "analyzers": [
       "identity",
-      "headers"
+      "headers",
+      "auth",
+      "urls",
+      "attachments"
     ],
     "degraded": false,
-    "max_reachable_score": 60
+    "max_reachable_score": 96
   },
   "input": {
     "source": "corpus/malicious/brand-lookalike.eml",
@@ -22,7 +25,7 @@
     "size_bytes": 898
   },
   "verdict": {
-    "score": 60,
+    "score": 74,
     "band": "HIGH",
     "trust_factor": 0
   },
@@ -56,11 +59,25 @@
       "strength": 1.0
     },
     {
+      "name": "urls",
+      "raw": 14.25,
+      "cap": 25.0,
+      "ceiling": 0.5,
+      "strength": 0.57
+    },
+    {
       "name": "headers",
       "raw": 12.8,
       "cap": 10.0,
       "ceiling": 0.2,
       "strength": 1.0
+    },
+    {
+      "name": "auth",
+      "raw": 5.4,
+      "cap": 30.0,
+      "ceiling": 0.55,
+      "strength": 0.18
     }
   ],
   "signals": [
@@ -72,7 +89,7 @@
       "kind": "indicator",
       "weight": 10.0,
       "confidence": 0.8,
-      "contribution": 8,
+      "contribution": 7,
       "explanation": "A reply would be delivered to recovery@mail-secure.example at mail-secure.example, not to micros0ft-login.example. Redirecting replies is how a conversation is moved somewhere the real sender cannot see it.",
       "advice": "Check where a reply would actually go before responding.",
       "evidence": [
@@ -99,7 +116,7 @@
       "kind": "indicator",
       "weight": 25.0,
       "confidence": 0.95,
-      "contribution": 24,
+      "contribution": 21,
       "explanation": "The sending domain micros0ft-login.example contains 'micros0ft', which reduces to the same confusable skeleton as Microsoft. micros0ft-login.example is not one of Microsoft's known domains, so the resemblance is not legitimate.",
       "advice": "Treat as impersonation. Do not interact; escalate for analyst review.",
       "evidence": [
@@ -122,7 +139,7 @@
       "kind": "indicator",
       "weight": 20.0,
       "confidence": 0.75,
-      "contribution": 15,
+      "contribution": 13,
       "explanation": "The display name claims Microsoft, but the message was sent from micros0ft-login.example, which is not one of Microsoft's known domains.",
       "advice": "Treat the branding as decoration. Verify through the brand's own app or site.",
       "evidence": [
@@ -144,7 +161,7 @@
       "kind": "indicator",
       "weight": 8.0,
       "confidence": 0.6,
-      "contribution": 5,
+      "contribution": 4,
       "explanation": "The Message-ID was generated at mail-secure.example while the message claims to be from micros0ft-login.example. This is normal for mail sent through a service provider, so it only matters alongside the other findings here.",
       "advice": "Corroborating evidence only. Read it together with the sender findings.",
       "evidence": [
@@ -171,7 +188,7 @@
       "kind": "indicator",
       "weight": 10.0,
       "confidence": 0.8,
-      "contribution": 8,
+      "contribution": 7,
       "explanation": "Bounces for this message go to mail-secure.example, but the reader sees micros0ft-login.example as the sender. Legitimate providers do this too, so weigh it together with the authentication and identity findings.",
       "advice": "Check whether the envelope sender is an expected mail provider for this brand.",
       "evidence": [
@@ -189,6 +206,44 @@
       "refs": [
         "RFC 5321 section 4.4",
         "RFC 7489"
+      ]
+    },
+    {
+      "id": "AUTH004",
+      "category": "auth",
+      "title": "Authentication results are absent",
+      "severity": "low",
+      "kind": "indicator",
+      "weight": 6.0,
+      "confidence": 0.9,
+      "contribution": 5,
+      "explanation": "No Authentication-Results, Received-SPF or DKIM-Signature header is present, so SPF, DKIM and DMARC cannot be evaluated from this message alone.",
+      "advice": "Weak on its own. Note it alongside identity findings.",
+      "evidence": [],
+      "refs": [
+        "RFC 8601"
+      ]
+    },
+    {
+      "id": "URL001",
+      "category": "urls",
+      "title": "Link uses an IP address as the host",
+      "severity": "high",
+      "kind": "indicator",
+      "weight": 15.0,
+      "confidence": 0.95,
+      "contribution": 17,
+      "explanation": "The link host is the IP address 198.51.100.23, not a domain name. Brands do not send customers to raw addresses.",
+      "advice": "Do not visit the address. Legitimate brands do not send customers to raw IPs.",
+      "evidence": [
+        {
+          "locator": "body:text",
+          "excerpt": "hxxp://198[.]51[.]100[.]23/account/verify?id=8831",
+          "note": "198.51.100.23"
+        }
+      ],
+      "refs": [
+        "MITRE ATT&CK T1566.002"
       ]
     }
   ],

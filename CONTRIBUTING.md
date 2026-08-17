@@ -70,8 +70,9 @@ and register it in `[project.entry-points."baittrace.analyzers"]` in
 a loading regression shows up in the first test run.
 
 If the analyzer needs the network, set `requires_network = True` and go
-through `ctx.resolver`. Do not call `socket` yourself. M1's resolver always
-returns `UNAVAILABLE`; write the analyzer against that.
+through `ctx.resolver`. Do not call `socket` yourself. The default resolver
+returns `UNAVAILABLE`; write the analyzer against that. `--online` and
+`--follow-redirects` inject a live resolver.
 
 ## Changing a score
 

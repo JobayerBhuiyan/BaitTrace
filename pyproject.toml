@@ -40,6 +40,10 @@ dev = [
     "mypy>=1.11",
     "pre-commit>=3.7",
 ]
+online = [
+    "dnspython>=2.6",
+    "dkimpy>=1.1",
+]
 
 [project.urls]
 Homepage = "https://github.com/JobayerBhuiyan/baittrace"
@@ -54,6 +58,9 @@ baittrace = "baittrace.cli:main"
 [project.entry-points."baittrace.analyzers"]
 identity = "baittrace.analyzers.identity:IdentityAnalyzer"
 headers = "baittrace.analyzers.headers:HeaderAnalyzer"
+auth = "baittrace.analyzers.auth:AuthAnalyzer"
+urls = "baittrace.analyzers.urls:UrlAnalyzer"
+attachments = "baittrace.analyzers.attachments:AttachmentAnalyzer"
 
 [tool.hatch.version]
 path = "src/baittrace/_version.py"
@@ -101,6 +108,10 @@ strict = true
 files = ["src/baittrace"]
 warn_unreachable = true
 disallow_any_generics = true
+
+[[tool.mypy.overrides]]
+module = ["dkim", "dns", "dns.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 minversion = "8.0"

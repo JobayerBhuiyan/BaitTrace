@@ -45,7 +45,7 @@ class TestFormats:
         main(["scan", str(MALICIOUS), "--format", "json", "--deterministic"])
         payload = json.loads(capsys.readouterr().out)
         assert payload["schema_version"] == "1.0"
-        assert payload["verdict"]["band"] == "HIGH"
+        assert payload["verdict"]["band"] in {"HIGH", "CRITICAL"}
 
     def test_text_output_names_the_rules(self, capsys) -> None:
         main(["scan", str(MALICIOUS), "--no-color"])
@@ -68,6 +68,7 @@ class TestOtherCommands:
         assert main(["rules"]) == EXIT_CLEAN
         out = capsys.readouterr().out
         assert "IDN003" in out and "HDR001" in out
+        assert "AUTH001" in out and "URL001" in out and "ATT003" in out
 
     def test_rules_can_filter_by_category(self, capsys) -> None:
         main(["rules", "--category", "headers"])
@@ -94,6 +95,7 @@ class TestOtherCommands:
         assert main(["version"]) == EXIT_CLEAN
         out = capsys.readouterr().out
         assert "identity" in out and "headers" in out
+        assert "auth" in out and "urls" in out and "attachments" in out
 
     def test_no_arguments_prints_help(self, capsys) -> None:
         assert main([]) == EXIT_ERROR

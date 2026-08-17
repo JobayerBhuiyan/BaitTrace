@@ -6,20 +6,23 @@
     "rulepack": "core@2026.08"
   },
   "scan": {
-    "id": "aabed29da37c34f9",
+    "id": "f8ce8eb9b5430768",
     "duration_ms": 0,
     "online": false,
     "analyzers": [
       "identity",
-      "headers"
+      "headers",
+      "auth",
+      "urls",
+      "attachments"
     ],
     "degraded": false,
-    "max_reachable_score": 60
+    "max_reachable_score": 96
   },
   "input": {
     "source": "corpus/benign/receipt.eml",
-    "sha256": "aabed29da37c34f91a1840f6432797c75036bd9f7f4381d326cca26c0b874494",
-    "size_bytes": 631
+    "sha256": "f8ce8eb9b5430768abf6ac205bcee926789d6f6ce78fa470744967f26a009a8a",
+    "size_bytes": 791
   },
   "verdict": {
     "score": 0,

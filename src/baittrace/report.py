@@ -34,8 +34,8 @@ class Report:
     scan_id: str = ""
 
     # The highest score the analyzers that actually ran could possibly produce.
-    # With two of seven evidence classes implemented this is well below 100, and
-    # a reader who does not know that will misread every low score as a clean
+    # Content and routing are not implemented yet, so this is below 100, and a
+    # reader who does not know that will misread every low score as a clean
     # bill of health. The report states it rather than letting 100 be assumed.
     max_reachable_score: int = 100
 

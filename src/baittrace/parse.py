@@ -23,6 +23,7 @@ from email.message import Message as EmailMessage
 from email.parser import Parser
 from email.policy import compat32
 from html.parser import HTMLParser
+from ipaddress import ip_address
 from urllib.parse import urlsplit
 
 from .assets import decode_punycode, registrable_domain
@@ -33,6 +34,7 @@ from .model import (
     Address,
     Attachment,
     AuthResults,
+    AuthState,
     Bodies,
     Dates,
     Header,
@@ -52,11 +54,17 @@ _RECEIVED_BY = re.compile(r"(?i)\bby\s+([^\s;()]+)")
 _RECEIVED_WITH = re.compile(r"(?i)\bwith\s+([^\s;()]+)")
 _RECEIVED_IP = re.compile(r"\[?((?:\d{1,3}\.){3}\d{1,3})\]?")
 
-_AUTH_HEADERS = {
-    "authentication-results": "authentication_results",
-    "received-spf": "received_spf",
-    "dkim-signature": "dkim_signatures",
-}
+_AUTH_RESULT = re.compile(
+    r"(?i)\b(spf|dkim|dmarc)\s*=\s*(pass|fail|softfail|neutral|none|temperror|permerror)"
+)
+_AUTH_MAILFROM = re.compile(r"(?i)smtp\.mailfrom\s*=\s*([^;\s]+)")
+_AUTH_DKIM_D = re.compile(r"(?i)header\.d\s*=\s*([^;\s]+)")
+_AUTH_FROM = re.compile(r"(?i)header\.from\s*=\s*([^;\s]+)")
+_AUTH_POLICY = re.compile(r"(?i)\bp(?:olicy\.p)?\s*=\s*(none|quarantine|reject)")
+_DKIM_TAG = re.compile(r"(?i)\b([a-z]+)\s*=\s*([^;]+)")
+_RECEIVED_SPF_RESULT = re.compile(
+    r"(?i)^\s*(pass|fail|softfail|neutral|none|temperror|permerror)\b"
+)
 
 _MAGIC: tuple[tuple[bytes, str], ...] = (
     (b"%PDF-", "application/pdf"),
@@ -271,6 +279,26 @@ def _parse_routing(headers: Headers) -> Routing:
     return Routing(hops=tuple(hops), originating_ip=originating, trust_boundary_index=None)
 
 
+_AUTH_HEADERS = {
+    "authentication-results": "authentication_results",
+    "received-spf": "received_spf",
+    "dkim-signature": "dkim_signatures",
+}
+
+
+def _as_auth_state(value: str) -> AuthState:
+    lowered = value.lower()
+    if lowered == "pass":
+        return AuthState.PASS
+    if lowered in {"fail", "softfail", "permerror"}:
+        return AuthState.FAIL
+    if lowered in {"temperror"}:
+        return AuthState.UNVERIFIABLE
+    if lowered in {"none", "neutral"}:
+        return AuthState.ABSENT
+    return AuthState.ABSENT
+
+
 def _parse_auth(headers: Headers) -> AuthResults:
     buckets: dict[str, list[str]] = {v: [] for v in _AUTH_HEADERS.values()}
     arc: list[str] = []
@@ -281,11 +309,70 @@ def _parse_auth(headers: Headers) -> AuthResults:
         elif header.lname.startswith("arc-"):
             arc.append(f"{header.name}: {header.value}")
 
+    spf = AuthState.ABSENT
+    dkim = AuthState.ABSENT
+    dmarc = AuthState.ABSENT
+    dmarc_policy = ""
+    spf_domain = ""
+    dkim_domain = ""
+    dkim_selector = ""
+    from_domain = ""
+
+    for raw in buckets["authentication_results"]:
+        for match in _AUTH_RESULT.finditer(raw):
+            method, result = match.group(1).lower(), match.group(2)
+            state = _as_auth_state(result)
+            if method == "spf":
+                spf = state
+            elif method == "dkim":
+                dkim = state
+            elif method == "dmarc":
+                dmarc = state
+        mailfrom = _AUTH_MAILFROM.search(raw)
+        if mailfrom:
+            addr = mailfrom.group(1).strip().strip("<>")
+            spf_domain = addr.rpartition("@")[2].lower() or addr.lower()
+        dkim_d = _AUTH_DKIM_D.search(raw)
+        if dkim_d:
+            dkim_domain = dkim_d.group(1).strip().lower()
+        header_from = _AUTH_FROM.search(raw)
+        if header_from:
+            from_domain = header_from.group(1).strip().lower()
+        policy = _AUTH_POLICY.search(raw)
+        if policy:
+            dmarc_policy = policy.group(1).lower()
+
+    if spf is AuthState.ABSENT:
+        for raw in buckets["received_spf"]:
+            spf_match = _RECEIVED_SPF_RESULT.search(raw)
+            if spf_match:
+                spf = _as_auth_state(spf_match.group(1))
+                break
+
+    for raw in buckets["dkim_signatures"]:
+        tags = {m.group(1).lower(): m.group(2).strip() for m in _DKIM_TAG.finditer(raw)}
+        if tags.get("d") and not dkim_domain:
+            dkim_domain = tags["d"].lower()
+        if tags.get("s") and not dkim_selector:
+            dkim_selector = tags["s"]
+        if dkim is AuthState.ABSENT and tags:
+            # A signature is present but Authentication-Results did not say
+            # what happened to it. That is unverifiable, not a pass.
+            dkim = AuthState.UNVERIFIABLE
+
     return AuthResults(
         authentication_results=tuple(buckets["authentication_results"]),
         received_spf=tuple(buckets["received_spf"]),
         dkim_signatures=tuple(buckets["dkim_signatures"]),
         arc_headers=tuple(arc),
+        spf=spf,
+        dkim=dkim,
+        dmarc=dmarc,
+        dmarc_policy=dmarc_policy,
+        spf_domain=spf_domain,
+        dkim_domain=dkim_domain,
+        dkim_selector=dkim_selector,
+        from_domain=from_domain,
     )
 
 
@@ -332,9 +419,48 @@ class _LinkExtractor(HTMLParser):
         return
 
 
+class _HtmlFlags(HTMLParser):
+    """Static flags for an HTML attachment. Never renders, never fetches."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.has_form = False
+        self.has_script = False
+        self.form_action = ""
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        mapping = {k.lower(): (v or "") for k, v in attrs}
+        if tag == "form":
+            self.has_form = True
+            if mapping.get("action") and not self.form_action:
+                self.form_action = mapping["action"]
+        elif tag == "script":
+            self.has_script = True
+
+    def error(self, message: str) -> None:  # pragma: no cover
+        return
+
+
+def inspect_html(payload: bytes) -> tuple[bool, bool, str]:
+    """Return (has_form, has_script, form_action) for an HTML payload."""
+    try:
+        text = payload.decode("utf-8", errors="replace")
+    except LookupError:  # pragma: no cover - utf-8 is always present
+        return False, False, ""
+    parser = _HtmlFlags()
+    try:
+        parser.feed(text)
+        parser.close()
+    except Exception:  # noqa: BLE001 - hostile HTML must not crash the parse
+        return False, False, ""
+    return parser.has_form, parser.has_script, parser.form_action
+
+
 def defang(url: str) -> str:
     """Neuter a URL so it cannot be clicked out of a terminal or a ticket."""
-    out = re.sub(r"(?i)^http", "hxxp", url)
+    from .sanitize import defang_schemes
+
+    out = defang_schemes(url)
     split = urlsplit(out if "://" in out else f"//{out}")
     host = split.netloc
     if host:
@@ -358,30 +484,39 @@ def _make_url(raw: str, anchor: str, location: str) -> Url | None:
         return None
 
     is_puny = "xn--" in host
+    is_ip = False
+    try:
+        ip_address(host.strip("[]"))
+        is_ip = True
+    except ValueError:
+        is_ip = False
+
     return Url(
         raw=raw,
         normalized=candidate,
         defanged=defang(raw),
         scheme=(split.scheme or "http").lower(),
         host=host,
-        registrable_domain=registrable_domain(host),
+        registrable_domain="" if is_ip else registrable_domain(host),
         path=split.path or "",
         anchor_text=anchor,
         location=location,
         is_punycode=is_puny,
         unicode_host=decode_punycode(host) if is_puny else "",
+        userinfo=split.username or "",
+        is_ip=is_ip,
     )
 
 
 def extract_urls(bodies: Bodies, limits: Limits, report: LimitsReport) -> tuple[Url, ...]:
     found: list[Url] = []
-    seen: set[tuple[str, str]] = set()
+    seen: set[str] = set()
 
     def add(raw: str, anchor: str, location: str) -> bool:
         url = _make_url(raw, anchor, location)
         if url is None:
             return True
-        key = (url.raw, url.location)
+        key = url.normalized.lower()
         if key in seen:
             return True
         if len(found) >= limits.max_urls:
@@ -409,9 +544,14 @@ def extract_urls(bodies: Bodies, limits: Limits, report: LimitsReport) -> tuple[
         for href, anchor, location in extractor.links:
             if not add(href, anchor, location):
                 return tuple(found)
-        for match in _URL_RE.finditer(bodies.text_html):
-            if not add(match.group(1), "", "body:html"):
-                return tuple(found)
+        # Regex is a fallback for URLs that are not in href/src/action, and
+        # for HTML the tag parser could not walk. Running it on tagged HTML
+        # double-counts hrefs and picks up URLs that only appear as painted
+        # text or nested in a query string.
+        if not extractor.links:
+            for match in _URL_RE.finditer(bodies.text_html):
+                if not add(match.group(1), "", "body:html"):
+                    return tuple(found)
 
     return tuple(found)
 
@@ -452,13 +592,14 @@ def _decode_payload(part: EmailMessage, limits: Limits, report: LimitsReport) ->
 
 def _walk(
     msg: EmailMessage, limits: Limits, report: LimitsReport
-) -> tuple[Bodies, tuple[Attachment, ...], Structure]:
+) -> tuple[Bodies, tuple[Attachment, ...], Structure, tuple[str, ...]]:
     text_parts: list[str] = []
     html_parts: list[str] = []
     charsets: list[str] = []
     attachments: list[Attachment] = []
     content_types: list[str] = []
     anomalies: list[str] = []
+    attachment_html: list[str] = []
 
     part_count = 0
     max_depth = 0
@@ -510,6 +651,16 @@ def _walk(
 
         is_attachment = bool(filename_raw) or disposition.startswith("attachment")
         if is_attachment:
+            looks_html = (
+                "html" in content_type
+                or filename_raw.lower().endswith((".html", ".htm"))
+                or sniff(payload) == "text/html"
+            )
+            has_form = has_script = False
+            form_action = ""
+            if looks_html:
+                has_form, has_script, form_action = inspect_html(payload)
+                attachment_html.append(payload.decode("utf-8", errors="replace"))
             attachments.append(
                 Attachment(
                     filename_raw=filename_raw,
@@ -520,6 +671,9 @@ def _walk(
                     sha256=hashlib.sha256(payload).hexdigest(),
                     part_path=path,
                     is_inline=disposition.startswith("inline"),
+                    has_html_form=has_form,
+                    has_script=has_script,
+                    form_action=form_action,
                 )
             )
             return
@@ -552,7 +706,7 @@ def _walk(
         is_multipart=msg.is_multipart(),
         anomalies=tuple(anomalies),
     )
-    return bodies, tuple(attachments), structure
+    return bodies, tuple(attachments), structure, tuple(attachment_html)
 
 
 # ---------------------------------------------------------------------------
@@ -597,8 +751,18 @@ def parse(raw: RawInput, limits: Limits | None = None) -> Message:
         return_path=return_path_addresses[0] if return_path_addresses else None,
     )
 
-    bodies, attachments, structure = _walk(parsed, bounds, report)
+    bodies, attachments, structure, extra_html = _walk(parsed, bounds, report)
     urls = extract_urls(bodies, bounds, report)
+    if extra_html:
+        extra = extract_urls(Bodies(text_html="\n".join(extra_html)), bounds, report)
+        seen = {u.normalized.lower() for u in urls}
+        merged = list(urls)
+        for url in extra:
+            key = url.normalized.lower()
+            if key not in seen:
+                seen.add(key)
+                merged.append(url)
+        urls = tuple(merged)
 
     subject_header = headers.first("subject")
     return Message(

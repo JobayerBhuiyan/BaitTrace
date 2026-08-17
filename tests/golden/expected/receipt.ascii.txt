@@ -3,25 +3,31 @@ BAITTRACE 0.1.0                                             core@2026.08
 Risk         BENIGN                                                0/100
              ...........................................................
 Source       corpus/benign/receipt.eml
-Analyzed     offline | identity, headers | 0 ms
+Analyzed     offline | identity, headers, auth, urls, attachments | 0 ms
 
-MESSAGE
+AUTHENTICATION
+[+]          SPF passed (reported)
+[+]          DKIM signature valid (reported)
+[+]          DMARC passed (reported)
+
+SENDER
 Subject      Your order 5512-A has shipped
 Displayed    Shop Example Orders
 Actual       orders@shop.example
 Date         Fri, 08 Aug 2026 17:22:38 +0000
-Links        1 found
+
+LINKS
+             1 URL discovered
              hxxps://shop[.]example/orders/5512-A
 
-FINDINGS
+REASONS FOR SCORE
              No indicators fired.
 
 NOT ANALYZED
-             This release does not yet examine links, attachments, SPF,
-             DKIM and DMARC, body wording, delivery path. The highest
-             score reachable from the evidence classes that did run is
-             60/100, so a low score reflects what was checked rather
-             than a clean bill of health.
+             This release does not yet examine body wording, delivery
+             path. The highest score reachable from the evidence classes
+             that did run is 96/100, so a low score reflects what was
+             checked rather than a clean bill of health.
 
 RECOMMENDED ACTION
              No strong indicators were found. Ordinary caution still

@@ -5,8 +5,9 @@ no I/O, holds no state between runs, and knows nothing about scoring or
 rendering. That constraint is what makes each one independently testable and
 what lets a contributor add detection without reading the rest of the codebase.
 
-Anything that needs the outside world goes through ``ctx.resolver``, which in
-M1 answers ``UNAVAILABLE`` to everything.
+Anything that needs the outside world goes through ``ctx.resolver``, which
+answers ``UNAVAILABLE`` unless the operator passed ``--online`` or
+``--follow-redirects``.
 """
 
 from __future__ import annotations
@@ -30,6 +31,7 @@ class Context:
     config: Config = field(default_factory=Config)
     resolver: Resolver = field(default_factory=NullResolver)
     budget: Budget = field(default_factory=Budget)
+    raw_bytes: bytes = b""
 
     @property
     def online(self) -> bool:

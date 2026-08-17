@@ -11,10 +11,13 @@
     "online": false,
     "analyzers": [
       "identity",
-      "headers"
+      "headers",
+      "auth",
+      "urls",
+      "attachments"
     ],
     "degraded": false,
-    "max_reachable_score": 60
+    "max_reachable_score": 96
   },
   "input": {
     "source": "corpus/malicious/display-name-spoof.eml",
@@ -22,8 +25,8 @@
     "size_bytes": 792
   },
   "verdict": {
-    "score": 60,
-    "band": "HIGH",
+    "score": 82,
+    "band": "CRITICAL",
     "trust_factor": 0
   },
   "message": {
@@ -33,7 +36,7 @@
     "from_domain": "gmail.com",
     "reply_to": [],
     "date": "Wed, 13 Aug 2026 14:02:09 +0000",
-    "url_count": 5,
+    "url_count": 2,
     "attachment_count": 0,
     "urls": [
       {
@@ -47,24 +50,6 @@
         "host": "tracker.example",
         "registrable_domain": "tracker.example",
         "location": "html:img[src]"
-      },
-      {
-        "defanged": "hxxp://billing-paypa1[.]example/pay",
-        "host": "billing-paypa1.example",
-        "registrable_domain": "billing-paypa1.example",
-        "location": "body:html"
-      },
-      {
-        "defanged": "hxxps://www[.]paypal[.]com/invoice",
-        "host": "www.paypal.com",
-        "registrable_domain": "paypal.com",
-        "location": "body:html"
-      },
-      {
-        "defanged": "hxxp://tracker[.]example/o.gif?id=9921",
-        "host": "tracker.example",
-        "registrable_domain": "tracker.example",
-        "location": "body:html"
       }
     ],
     "attachments": []
@@ -78,11 +63,25 @@
       "strength": 1.0
     },
     {
+      "name": "urls",
+      "raw": 25.6,
+      "cap": 25.0,
+      "ceiling": 0.5,
+      "strength": 1.0
+    },
+    {
       "name": "headers",
       "raw": 24.4,
       "cap": 10.0,
       "ceiling": 0.2,
       "strength": 1.0
+    },
+    {
+      "name": "auth",
+      "raw": 5.4,
+      "cap": 30.0,
+      "ceiling": 0.55,
+      "strength": 0.18
     }
   ],
   "signals": [
@@ -94,7 +93,7 @@
       "kind": "indicator",
       "weight": 18.0,
       "confidence": 0.95,
-      "contribution": 23,
+      "contribution": 17,
       "explanation": "The display name shows service@paypal.com, but the message is actually from finance.dept.2026@gmail.com. A mail client shows the display name, so the address a reader sees is not the address that sent this.",
       "advice": "Treat the visible address as forged. Verify through a known-good channel.",
       "evidence": [
@@ -117,7 +116,7 @@
       "kind": "indicator",
       "weight": 20.0,
       "confidence": 0.9,
-      "contribution": 25,
+      "contribution": 18,
       "explanation": "The display name claims PayPal, but the message was sent from gmail.com, which is a consumer mailbox provider. A brand does not contact customers from a personal mailbox.",
       "advice": "Treat the branding as decoration. Verify through the brand's own app or site.",
       "evidence": [
@@ -139,7 +138,7 @@
       "kind": "indicator",
       "weight": 20.0,
       "confidence": 0.95,
-      "contribution": 9,
+      "contribution": 7,
       "explanation": "These headers appear more than once: from. RFC 5322 permits one occurrence each. When a message carries two, the header a gateway validates and the header your mail client displays can be different ones, which is exactly what the technique exploits.",
       "advice": "Compare the duplicated values. The one your client shows may not be the one that was validated.",
       "evidence": [
@@ -166,12 +165,72 @@
       "kind": "indicator",
       "weight": 6.0,
       "confidence": 0.9,
-      "contribution": 3,
+      "contribution": 2,
       "explanation": "No Message-ID header is present. Mail clients and mail servers both set one as a matter of course, so its absence suggests the message was assembled by a script.",
       "advice": "Weak on its own. Note it alongside the other findings.",
       "evidence": [],
       "refs": [
         "RFC 5322 section 3.6.4"
+      ]
+    },
+    {
+      "id": "AUTH004",
+      "category": "auth",
+      "title": "Authentication results are absent",
+      "severity": "low",
+      "kind": "indicator",
+      "weight": 6.0,
+      "confidence": 0.9,
+      "contribution": 4,
+      "explanation": "No Authentication-Results, Received-SPF or DKIM-Signature header is present, so SPF, DKIM and DMARC cannot be evaluated from this message alone.",
+      "advice": "Weak on its own. Note it alongside identity findings.",
+      "evidence": [],
+      "refs": [
+        "RFC 8601"
+      ]
+    },
+    {
+      "id": "URL003",
+      "category": "urls",
+      "title": "Anchor text disagrees with the link target",
+      "severity": "high",
+      "kind": "indicator",
+      "weight": 16.0,
+      "confidence": 0.9,
+      "contribution": 19,
+      "explanation": "The visible text names paypal.com but the href points at billing-paypa1.example.",
+      "advice": "Trust the href, not the painted text. Do not visit either without verifying.",
+      "evidence": [
+        {
+          "locator": "html:a[href]",
+          "excerpt": "hxxp://billing-paypa1[.]example/pay",
+          "note": "billing-paypa1.example"
+        }
+      ],
+      "refs": [
+        "MITRE ATT&CK T1566.002"
+      ]
+    },
+    {
+      "id": "URL006",
+      "category": "urls",
+      "title": "Link puts a brand name on an unrelated domain",
+      "severity": "high",
+      "kind": "indicator",
+      "weight": 14.0,
+      "confidence": 0.8,
+      "contribution": 15,
+      "explanation": "The URL contains 'paypa1', which resembles PayPal, but billing-paypa1.example is not one of PayPal's domains.",
+      "advice": "The brand in the path is decoration. The registrable domain is what matters.",
+      "evidence": [
+        {
+          "locator": "html:a[href]",
+          "excerpt": "hxxp://billing-paypa1[.]example/pay",
+          "note": "billing-paypa1.example"
+        }
+      ],
+      "refs": [
+        "MITRE ATT&CK T1566.002"
       ]
     }
   ],

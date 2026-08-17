@@ -1,0 +1,391 @@
+{
+  "schema_version": "1.0",
+  "tool": {
+    "name": "baittrace",
+    "version": "0.1.0",
+    "rulepack": "core@2026.08"
+  },
+  "scan": {
+    "id": "cd71fd043a5f336f",
+    "duration_ms": 0,
+    "online": false,
+    "analyzers": [
+      "identity",
+      "headers",
+      "auth",
+      "urls",
+      "attachments"
+    ],
+    "degraded": false,
+    "max_reachable_score": 96
+  },
+  "input": {
+    "source": "corpus/malicious/instructor-demo.eml",
+    "sha256": "cd71fd043a5f336f3cb7983a0da732f963b4913720483298062fe195476b29fd",
+    "size_bytes": 1665
+  },
+  "verdict": {
+    "score": 94,
+    "band": "CRITICAL",
+    "trust_factor": 0
+  },
+  "message": {
+    "subject": "Action required: your account will be suspended in 24 hours",
+    "from_display": "Microsoft Support",
+    "from_address": "account@micros0ft-login.example",
+    "from_domain": "micros0ft-login.example",
+    "reply_to": [
+      "recovery@mail-secure.example"
+    ],
+    "date": "Tue, 12 Aug 2026 09:14:02 +0000",
+    "url_count": 3,
+    "attachment_count": 1,
+    "urls": [
+      {
+        "defanged": "hxxp://198[.]51[.]100[.]23/account/verify?id=8831",
+        "host": "198.51.100.23",
+        "registrable_domain": "",
+        "location": "html:a[href]"
+      },
+      {
+        "defanged": "hxxp://go[.]mail-secure[.]example/redirect?u=hxxp://collect.example/login",
+        "host": "go.mail-secure.example",
+        "registrable_domain": "mail-secure.example",
+        "location": "html:a[href]"
+      },
+      {
+        "defanged": "hxxp://collect[.]example/harvest",
+        "host": "collect.example",
+        "registrable_domain": "collect.example",
+        "location": "html:form[action]"
+      }
+    ],
+    "attachments": [
+      {
+        "filename": "invoice.html",
+        "declared_mime": "text/html",
+        "sniffed_mime": "text/html",
+        "size_bytes": 184,
+        "sha256": "a9322c196e008873970446e7982dce2dfd3838aee1d1cabb8e6161527b7a0c0a"
+      }
+    ]
+  },
+  "categories": [
+    {
+      "name": "identity",
+      "raw": 46.75,
+      "cap": 25.0,
+      "ceiling": 0.5,
+      "strength": 1.0
+    },
+    {
+      "name": "auth",
+      "raw": 45.7,
+      "cap": 30.0,
+      "ceiling": 0.55,
+      "strength": 1.0
+    },
+    {
+      "name": "urls",
+      "raw": 28.65,
+      "cap": 25.0,
+      "ceiling": 0.5,
+      "strength": 1.0
+    },
+    {
+      "name": "attachments",
+      "raw": 16.2,
+      "cap": 25.0,
+      "ceiling": 0.5,
+      "strength": 0.648
+    },
+    {
+      "name": "headers",
+      "raw": 12.8,
+      "cap": 10.0,
+      "ceiling": 0.2,
+      "strength": 1.0
+    }
+  ],
+  "signals": [
+    {
+      "id": "IDN002",
+      "category": "identity",
+      "title": "Reply-To points at a different organisation",
+      "severity": "medium",
+      "kind": "indicator",
+      "weight": 10.0,
+      "confidence": 0.8,
+      "contribution": 4,
+      "explanation": "A reply would be delivered to recovery@mail-secure.example at mail-secure.example, not to micros0ft-login.example. Redirecting replies is how a conversation is moved somewhere the real sender cannot see it.",
+      "advice": "Check where a reply would actually go before responding.",
+      "evidence": [
+        {
+          "locator": "header:From",
+          "excerpt": "Microsoft Support <account@micros0ft-login.example>",
+          "note": ""
+        },
+        {
+          "locator": "header:Reply-To",
+          "excerpt": "Account Recovery <recovery@mail-secure.example>",
+          "note": ""
+        }
+      ],
+      "refs": [
+        "RFC 5322 section 3.6.2"
+      ]
+    },
+    {
+      "id": "IDN003",
+      "category": "identity",
+      "title": "Sender domain resembles a known brand",
+      "severity": "high",
+      "kind": "indicator",
+      "weight": 25.0,
+      "confidence": 0.95,
+      "contribution": 12,
+      "explanation": "The sending domain micros0ft-login.example contains 'micros0ft', which reduces to the same confusable skeleton as Microsoft. micros0ft-login.example is not one of Microsoft's known domains, so the resemblance is not legitimate.",
+      "advice": "Treat as impersonation. Do not interact; escalate for analyst review.",
+      "evidence": [
+        {
+          "locator": "header:From",
+          "excerpt": "Microsoft Support <account@micros0ft-login.example>",
+          "note": "skeleton(micros0ft) == skeleton(microsoft)"
+        }
+      ],
+      "refs": [
+        "Unicode UTS #39",
+        "MITRE ATT&CK T1566.002"
+      ]
+    },
+    {
+      "id": "IDN004",
+      "category": "identity",
+      "title": "Display name claims a brand the domain does not belong to",
+      "severity": "high",
+      "kind": "indicator",
+      "weight": 20.0,
+      "confidence": 0.75,
+      "contribution": 8,
+      "explanation": "The display name claims Microsoft, but the message was sent from micros0ft-login.example, which is not one of Microsoft's known domains.",
+      "advice": "Treat the branding as decoration. Verify through the brand's own app or site.",
+      "evidence": [
+        {
+          "locator": "header:From",
+          "excerpt": "Microsoft Support <account@micros0ft-login.example>",
+          "note": "display name claims Microsoft"
+        }
+      ],
+      "refs": [
+        "MITRE ATT&CK T1566.002"
+      ]
+    },
+    {
+      "id": "HDR003",
+      "category": "headers",
+      "title": "Message-ID domain does not match the sender",
+      "severity": "medium",
+      "kind": "indicator",
+      "weight": 8.0,
+      "confidence": 0.6,
+      "contribution": 2,
+      "explanation": "The Message-ID was generated at mail-secure.example while the message claims to be from micros0ft-login.example. This is normal for mail sent through a service provider, so it only matters alongside the other findings here.",
+      "advice": "Corroborating evidence only. Read it together with the sender findings.",
+      "evidence": [
+        {
+          "locator": "header:Message-ID",
+          "excerpt": "<5f2a9c04-1b77-4a10-9d3e-77bb0c2e1a55@mail-secure.example>",
+          "note": ""
+        },
+        {
+          "locator": "header:From",
+          "excerpt": "Microsoft Support <account@micros0ft-login.example>",
+          "note": ""
+        }
+      ],
+      "refs": [
+        "RFC 5322 section 3.6.4"
+      ]
+    },
+    {
+      "id": "HDR005",
+      "category": "headers",
+      "title": "Return-Path does not match the sender",
+      "severity": "medium",
+      "kind": "indicator",
+      "weight": 10.0,
+      "confidence": 0.8,
+      "contribution": 4,
+      "explanation": "Bounces for this message go to mail-secure.example, but the reader sees micros0ft-login.example as the sender. Legitimate providers do this too, so weigh it together with the authentication and identity findings.",
+      "advice": "Check whether the envelope sender is an expected mail provider for this brand.",
+      "evidence": [
+        {
+          "locator": "header:Return-Path",
+          "excerpt": "bounce@mail-secure.example",
+          "note": ""
+        },
+        {
+          "locator": "header:From",
+          "excerpt": "Microsoft Support <account@micros0ft-login.example>",
+          "note": ""
+        }
+      ],
+      "refs": [
+        "RFC 5321 section 4.4",
+        "RFC 7489"
+      ]
+    },
+    {
+      "id": "AUTH002",
+      "category": "auth",
+      "title": "DKIM signature is invalid",
+      "severity": "high",
+      "kind": "indicator",
+      "weight": 20.0,
+      "confidence": 0.8,
+      "contribution": 10,
+      "explanation": "DKIM reported result is fail for d=micros0ft-login.example. The signature does not validate. These results were reported by the receiving gateway and have not been independently verified.",
+      "advice": "The body or signed headers were altered, or the signature was never valid.",
+      "evidence": [
+        {
+          "locator": "header:Authentication-Results",
+          "excerpt": "mx.example.com; spf=pass smtp.mailfrom=bounce@mail-secure.example; dkim=fail header.d=micros0ft-login.example; dmarc=fail policy.p=none header.from=micros0ft-login.example",
+          "note": ""
+        },
+        {
+          "locator": "header:Received-SPF",
+          "excerpt": "pass (mail-secure.example: domain of bounce@mail-secure.example designates 198.51.100.23 as permitted sender)",
+          "note": ""
+        }
+      ],
+      "refs": [
+        "RFC 6376"
+      ]
+    },
+    {
+      "id": "AUTH003",
+      "category": "auth",
+      "title": "DMARC failed or publishes no enforcement",
+      "severity": "high",
+      "kind": "indicator",
+      "weight": 18.0,
+      "confidence": 0.85,
+      "contribution": 10,
+      "explanation": "DMARC reported result is fail and the published policy is p=none. These results were reported by the receiving gateway and have not been independently verified.",
+      "advice": "Do not trust the visible From domain. Brand impersonation usually presents this way.",
+      "evidence": [
+        {
+          "locator": "header:Authentication-Results",
+          "excerpt": "mx.example.com; spf=pass smtp.mailfrom=bounce@mail-secure.example; dkim=fail header.d=micros0ft-login.example; dmarc=fail policy.p=none header.from=micros0ft-login.example",
+          "note": ""
+        },
+        {
+          "locator": "header:Received-SPF",
+          "excerpt": "pass (mail-secure.example: domain of bounce@mail-secure.example designates 198.51.100.23 as permitted sender)",
+          "note": ""
+        }
+      ],
+      "refs": [
+        "RFC 7489"
+      ]
+    },
+    {
+      "id": "AUTH005",
+      "category": "auth",
+      "title": "SPF or DKIM passed for a domain that does not match From",
+      "severity": "high",
+      "kind": "indicator",
+      "weight": 16.0,
+      "confidence": 0.9,
+      "contribution": 9,
+      "explanation": "Authentication passed for mail-secure.example, but the message claims to be from micros0ft-login.example. The pass does not cover the identity a reader sees. These results were reported by the receiving gateway and have not been independently verified.",
+      "advice": "The pass authenticates a different organisation than the one being impersonated.",
+      "evidence": [
+        {
+          "locator": "header:Authentication-Results",
+          "excerpt": "mx.example.com; spf=pass smtp.mailfrom=bounce@mail-secure.example; dkim=fail header.d=micros0ft-login.example; dmarc=fail policy.p=none header.from=micros0ft-login.example",
+          "note": ""
+        },
+        {
+          "locator": "header:Received-SPF",
+          "excerpt": "pass (mail-secure.example: domain of bounce@mail-secure.example designates 198.51.100.23 as permitted sender)",
+          "note": ""
+        }
+      ],
+      "refs": [
+        "RFC 7489",
+        "RFC 7208"
+      ]
+    },
+    {
+      "id": "URL001",
+      "category": "urls",
+      "title": "Link uses an IP address as the host",
+      "severity": "high",
+      "kind": "indicator",
+      "weight": 15.0,
+      "confidence": 0.95,
+      "contribution": 12,
+      "explanation": "The link host is the IP address 198.51.100.23, not a domain name. Brands do not send customers to raw addresses.",
+      "advice": "Do not visit the address. Legitimate brands do not send customers to raw IPs.",
+      "evidence": [
+        {
+          "locator": "html:a[href]",
+          "excerpt": "hxxp://198[.]51[.]100[.]23/account/verify?id=8831",
+          "note": "198.51.100.23"
+        }
+      ],
+      "refs": [
+        "MITRE ATT&CK T1566.002"
+      ]
+    },
+    {
+      "id": "URL003",
+      "category": "urls",
+      "title": "Anchor text disagrees with the link target",
+      "severity": "high",
+      "kind": "indicator",
+      "weight": 16.0,
+      "confidence": 0.9,
+      "contribution": 12,
+      "explanation": "The visible text names microsoft.com but the href points at 198.51.100.23.",
+      "advice": "Trust the href, not the painted text. Do not visit either without verifying.",
+      "evidence": [
+        {
+          "locator": "html:a[href]",
+          "excerpt": "hxxp://198[.]51[.]100[.]23/account/verify?id=8831",
+          "note": "198.51.100.23"
+        }
+      ],
+      "refs": [
+        "MITRE ATT&CK T1566.002"
+      ]
+    },
+    {
+      "id": "ATT003",
+      "category": "attachments",
+      "title": "HTML attachment contains an external form or script",
+      "severity": "high",
+      "kind": "indicator",
+      "weight": 18.0,
+      "confidence": 0.9,
+      "contribution": 11,
+      "explanation": "The HTML attachment contains a <form>. The form submits to hxxp://collect[.]example/harvest. This is how a credential-harvest page is delivered without a link.",
+      "advice": "This is a credential-harvest page delivered as an attachment. Do not open it.",
+      "evidence": [
+        {
+          "locator": "attachment:0.1",
+          "excerpt": "invoice.html",
+          "note": "declared text/html; sniffed text/html"
+        }
+      ],
+      "refs": [
+        "MITRE ATT&CK T1566.001"
+      ]
+    }
+  ],
+  "suppressors": [],
+  "errors": [],
+  "truncations": [],
+  "notes": []
+}

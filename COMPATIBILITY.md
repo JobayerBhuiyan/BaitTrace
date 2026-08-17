@@ -28,6 +28,9 @@ consumer can branch.
 - Removing or retyping a field is a **major** schema version (`2.0`).
 - `baittrace schema` prints the JSON Schema. CI validates every corpus
   report against it.
+- Rule IDs are `PREFIX` + three digits, where `PREFIX` is three or four
+  uppercase letters (`IDN003`, `AUTH005`). Widening the pattern to allow
+  four-letter prefixes is compatible; shrinking it is not.
 
 The same document is what a future `POST /v1/scan` will return. A consumer
 written against the CLI is written against the API.

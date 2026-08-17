@@ -134,6 +134,12 @@ def redact(text: str) -> str:
     return _IPV4.sub(_mask_ip, _EMAIL.sub(_mask_email, text))
 
 
+def defang_schemes(text: str) -> str:
+    """Replace live http(s) schemes anywhere in the string, including nested URLs."""
+    out = re.sub(r"(?i)https://", "hxxps://", text)
+    return re.sub(r"(?i)http://", "hxxp://", out)
+
+
 def clean(
     text: str,
     *,
@@ -145,7 +151,7 @@ def clean(
 
     Nothing derived from a message should reach output by any other route.
     """
-    out = collapse(text)
+    out = defang_schemes(collapse(text))
     if redacted:
         out = redact(out)
     if ascii_only:

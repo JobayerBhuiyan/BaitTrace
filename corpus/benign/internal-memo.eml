@@ -7,6 +7,10 @@ To: "Bob Ellis" <bob@corp.example>
 Subject: Notes from yesterday's planning session
 Date: Thu, 07 Aug 2026 08:04:58 +0000
 Message-ID: <CAF9x2mQ7pL@mail.corp.example>
+Authentication-Results: mail.corp.example;
+	spf=pass smtp.mailfrom=alice@corp.example;
+	dkim=pass header.d=corp.example;
+	dmarc=pass header.from=corp.example
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 

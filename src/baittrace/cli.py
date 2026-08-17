@@ -46,9 +46,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="baittrace",
         description=(
-            "Offline-first, explainable phishing triage. Analysis is inert: no "
-            "network, no HTML rendering, and nothing the message references is "
-            "ever fetched."
+            "Offline-first, explainable phishing triage. Analysis is inert by "
+            "default: no network, no HTML rendering, and nothing the message "
+            "references is ever fetched. Pass --online or --follow-redirects to "
+            "opt in to network checks."
         ),
         epilog="Documentation: https://github.com/JobayerBhuiyan/baittrace",
     )
@@ -72,6 +73,23 @@ def build_parser() -> argparse.ArgumentParser:
         default="high",
         choices=tuple(_FAIL_ON),
         help="lowest band that exits non-zero (default: high)",
+    )
+    scan_parser.add_argument(
+        "--online",
+        action="store_true",
+        help=(
+            "independently verify SPF/DKIM/DMARC via DNS "
+            "(requires: pip install 'baittrace[online]')"
+        ),
+    )
+    scan_parser.add_argument(
+        "--follow-redirects",
+        action="store_true",
+        help=(
+            "follow HTTP redirect chains for discovered URLs. Implies network access. "
+            "Following a phishing link can confirm to the attacker that the mail was read, "
+            "so this is off by default."
+        ),
     )
     scan_parser.add_argument(
         "--redact",
@@ -131,6 +149,8 @@ def _style_from(args: argparse.Namespace) -> Style:
 
 def _config_from(args: argparse.Namespace) -> Config:
     config = load_config(getattr(args, "config", None))
+    follow = bool(getattr(args, "follow_redirects", False)) or config.follow_redirects
+    online = bool(getattr(args, "online", False)) or config.online
     return config.with_overrides(
         redact=bool(getattr(args, "redact", False)) or config.redact,
         no_plugins=bool(getattr(args, "no_plugins", False)) or config.no_plugins,
@@ -138,6 +158,8 @@ def _config_from(args: argparse.Namespace) -> Config:
         only_categories=tuple(getattr(args, "only", []) or ()),
         skip_categories=tuple(getattr(args, "skip", []) or ()),
         deterministic=bool(getattr(args, "deterministic", False)),
+        online=online,
+        follow_redirects=follow,
     )
 
 

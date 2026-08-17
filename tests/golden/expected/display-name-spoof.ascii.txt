@@ -1,43 +1,58 @@
 BAITTRACE 0.1.0                                             core@2026.08
 ------------------------------------------------------------------------
-Risk         HIGH                                                 60/100
-             ###################################........................
+Risk         CRITICAL                                             82/100
+             ################################################...........
 Source       corpus/malicious/display-name-spoof.eml
-Analyzed     offline | identity, headers | 0 ms
+Analyzed     offline | identity, headers, auth, urls, attachments | 0 ms
 
-MESSAGE
+AUTHENTICATION
+[-]          SPF absent
+[-]          DKIM absent
+[-]          DMARC absent
+[-]          No authentication results on this message
+
+SENDER
 Subject      Invoice INV-9921 is past due
 Displayed    PayPal Service <service@paypal.com>
 Actual       finance.dept.2026@gmail.com
+             display name contains a different address
 Date         Wed, 13 Aug 2026 14:02:09 +0000
-Links        5 found
+
+LINKS
+             2 URLs discovered
              hxxp://billing-paypa1[.]example/pay
              hxxp://tracker[.]example/o.gif?id=9921
-             hxxp://billing-paypa1[.]example/pay
-             ... and 2 more
+[x]          Anchor text disagrees with the link target
+[x]          Link puts a brand name on an unrelated domain
 
-FINDINGS
-             4 indicators
+REASONS FOR SCORE
+[x]   +19  URL003  Anchor text disagrees with the link target
+             The visible text names paypal.com but the href points at
+             billing-paypa1.example.
+evidence     html:a[href]  hxxp://billing-paypa1[.]example/pay
 
-[x]   +25  IDN004  Display name claims a brand the domain does not
+[x]   +18  IDN004  Display name claims a brand the domain does not
                    belong to
              The display name claims PayPal, but the message was sent
              from gmail.com, which is a consumer mailbox provider. A
              brand does not contact customers from a personal mailbox.
 evidence     header:From  PayPal Service <service@paypal.com>
              <finance.dept.2026@gmail.com>
-             display name claims PayPal
 
-[x]   +23  IDN001  Display name contains a different email address
+[x]   +17  IDN001  Display name contains a different email address
              The display name shows service@paypal.com, but the message
              is actually from finance.dept.2026@gmail.com. A mail client
              shows the display name, so the address a reader sees is not
              the address that sent this.
 evidence     header:From  PayPal Service <service@paypal.com>
              <finance.dept.2026@gmail.com>
-             claims paypal.com, actually gmail.com
 
-[x]    +9  HDR001  Duplicate single-occurrence header
+[x]   +15  URL006  Link puts a brand name on an unrelated domain
+             The URL contains 'paypa1', which resembles PayPal, but
+             billing-paypa1.example is not one of PayPal's domains.
+evidence     html:a[href]  hxxp://billing-paypa1[.]example/pay
+
+[x]    +7  HDR001  Duplicate single-occurrence header
              These headers appear more than once: from. RFC 5322 permits
              one occurrence each. When a message carries two, the header
              a gateway validates and the header your mail client
@@ -48,27 +63,32 @@ evidence     header:From#2  "PayPal Service <service@paypal.com>"
 evidence     header:From#3  "PayPal Service"
              <finance.dept.2026@gmail.com>
 
-[-]    +3  HDR002  Message-ID is missing
+[-]    +4  AUTH004  Authentication results are absent
+             No Authentication-Results, Received-SPF or DKIM-Signature
+             header is present, so SPF, DKIM and DMARC cannot be
+             evaluated from this message alone.
+
+[-]    +2  HDR002  Message-ID is missing
              No Message-ID header is present. Mail clients and mail
              servers both set one as a matter of course, so its absence
              suggests the message was assembled by a script.
 
+
 SCORING
 identity     ################  raw 35.1, cap 25 (capped)
+urls         ################  raw 25.6, cap 25 (capped)
 headers      ################  raw 24.4, cap 10 (capped)
+auth         ###.............  raw 5.4, cap 30
              Points shown against each finding are attributed
              contributions that sum to the score, not literal addends;
              see docs/SCORING.md.
 
 NOT ANALYZED
-             This release does not yet examine links, attachments, SPF,
-             DKIM and DMARC, body wording, delivery path. The highest
-             score reachable from the evidence classes that did run is
-             60/100, so a low score reflects what was checked rather
-             than a clean bill of health.
+             This release does not yet examine body wording, delivery
+             path. The highest score reachable from the evidence classes
+             that did run is 96/100, so a low score reflects what was
+             checked rather than a clean bill of health.
 
 RECOMMENDED ACTION
-             Treat this as phishing until proven otherwise. Do not click
-             links or open attachments. Verify with the supposed sender
-             through a channel you already trust, not one this message
-             provides.
+             Do not interact with this email. Do not click any link,
+             open any attachment, or reply. Escalate for analyst review.

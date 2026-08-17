@@ -11,10 +11,13 @@
     "online": false,
     "analyzers": [
       "identity",
-      "headers"
+      "headers",
+      "auth",
+      "urls",
+      "attachments"
     ],
     "degraded": false,
-    "max_reachable_score": 60
+    "max_reachable_score": 96
   },
   "input": {
     "source": "corpus/malicious/homograph-attachment.eml",
@@ -22,8 +25,8 @@
     "size_bytes": 1066
   },
   "verdict": {
-    "score": 60,
-    "band": "HIGH",
+    "score": 82,
+    "band": "CRITICAL",
     "trust_factor": 0
   },
   "message": {
@@ -33,9 +36,16 @@
     "from_domain": "xn--pple-43d.example",
     "reply_to": [],
     "date": "Sat, 01 Mar 2025 11:00:00 +0000",
-    "url_count": 0,
+    "url_count": 1,
     "attachment_count": 1,
-    "urls": [],
+    "urls": [
+      {
+        "defanged": "hxxp://collect[.]example/harvest",
+        "host": "collect.example",
+        "registrable_domain": "collect.example",
+        "location": "html:form[action]"
+      }
+    ],
     "attachments": [
       {
         "filename": "invoice<RLO>gnp.html",
@@ -47,6 +57,13 @@
     ]
   },
   "categories": [
+    {
+      "name": "attachments",
+      "raw": 33.3,
+      "cap": 25.0,
+      "ceiling": 0.5,
+      "strength": 1.0
+    },
     {
       "name": "identity",
       "raw": 29.25,
@@ -60,6 +77,13 @@
       "cap": 10.0,
       "ceiling": 0.2,
       "strength": 1.0
+    },
+    {
+      "name": "auth",
+      "raw": 5.4,
+      "cap": 30.0,
+      "ceiling": 0.55,
+      "strength": 0.18
     }
   ],
   "signals": [
@@ -71,7 +95,7 @@
       "kind": "indicator",
       "weight": 20.0,
       "confidence": 0.75,
-      "contribution": 25,
+      "contribution": 18,
       "explanation": "The display name claims Apple, but the message was sent from xn--pple-43d.example, which is not one of Apple's known domains.",
       "advice": "Treat the branding as decoration. Verify through the brand's own app or site.",
       "evidence": [
@@ -93,7 +117,7 @@
       "kind": "indicator",
       "weight": 15.0,
       "confidence": 0.95,
-      "contribution": 23,
+      "contribution": 17,
       "explanation": "xn--pple-43d.example is an internationalised domain that decodes to 'аpple.example', which mixes writing systems within the name.",
       "advice": "Read the decoded form of the domain rather than the rendered one.",
       "evidence": [
@@ -117,7 +141,7 @@
       "kind": "indicator",
       "weight": 8.0,
       "confidence": 0.6,
-      "contribution": 5,
+      "contribution": 3,
       "explanation": "The Message-ID was generated at relay.example while the message claims to be from xn--pple-43d.example. This is normal for mail sent through a service provider, so it only matters alongside the other findings here.",
       "advice": "Corroborating evidence only. Read it together with the sender findings.",
       "evidence": [
@@ -144,7 +168,7 @@
       "kind": "indicator",
       "weight": 8.0,
       "confidence": 0.8,
-      "contribution": 7,
+      "contribution": 5,
       "explanation": "The Date header says 2025-03-01T11:00:00+00:00 but the delivery chain timestamps the message at 2026-08-14T03:41:52+00:00, a difference of 530 day(s). The two should agree closely.",
       "advice": "A forged Date is often used to bury a message in a mailbox or to fake urgency.",
       "evidence": [
@@ -161,6 +185,66 @@
       ],
       "refs": [
         "RFC 5322 section 3.3"
+      ]
+    },
+    {
+      "id": "AUTH004",
+      "category": "auth",
+      "title": "Authentication results are absent",
+      "severity": "low",
+      "kind": "indicator",
+      "weight": 6.0,
+      "confidence": 0.9,
+      "contribution": 4,
+      "explanation": "No Authentication-Results, Received-SPF or DKIM-Signature header is present, so SPF, DKIM and DMARC cannot be evaluated from this message alone.",
+      "advice": "Weak on its own. Note it alongside identity findings.",
+      "evidence": [],
+      "refs": [
+        "RFC 8601"
+      ]
+    },
+    {
+      "id": "ATT003",
+      "category": "attachments",
+      "title": "HTML attachment contains an external form or script",
+      "severity": "high",
+      "kind": "indicator",
+      "weight": 18.0,
+      "confidence": 0.9,
+      "contribution": 17,
+      "explanation": "The HTML attachment contains a <form>. The form submits to hxxp://collect[.]example/harvest. This is how a credential-harvest page is delivered without a link.",
+      "advice": "This is a credential-harvest page delivered as an attachment. Do not open it.",
+      "evidence": [
+        {
+          "locator": "attachment:0.1",
+          "excerpt": "invoice<RLO>gnp.html",
+          "note": "declared text/html; sniffed text/html"
+        }
+      ],
+      "refs": [
+        "MITRE ATT&CK T1566.001"
+      ]
+    },
+    {
+      "id": "ATT005",
+      "category": "attachments",
+      "title": "Filename contains a right-to-left override",
+      "severity": "high",
+      "kind": "indicator",
+      "weight": 18.0,
+      "confidence": 0.95,
+      "contribution": 18,
+      "explanation": "The filename contains a Unicode direction override, which is used to make invoice.exe render as invoiceexe.png (or similar) in a file list.",
+      "advice": "The override is itself the finding. Read the sanitised filename in this report.",
+      "evidence": [
+        {
+          "locator": "attachment:0.1",
+          "excerpt": "invoice<RLO>gnp.html",
+          "note": "declared text/html; sniffed text/html"
+        }
+      ],
+      "refs": [
+        "Unicode UAX #9"
       ]
     }
   ],
