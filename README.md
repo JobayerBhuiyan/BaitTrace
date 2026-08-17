@@ -122,6 +122,15 @@ baittrace scan suspicious.eml --follow-redirects
 baittrace explain AUTH005
 baittrace rules
 baittrace schema
+baittrace init                          # commented ./baittrace.toml
+```
+
+Shell completion (re-run after upgrading so rule IDs stay current):
+
+```bash
+eval "$(baittrace completion bash)"     # bash
+eval "$(baittrace completion zsh)"      # zsh
+baittrace completion fish | source      # fish
 ```
 
 Exit codes, because the difference between "found something" and "the tool

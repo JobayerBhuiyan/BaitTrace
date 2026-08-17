@@ -24,6 +24,42 @@ CONFIG_FILENAME = "baittrace.toml"
 
 _KNOWN_SECTIONS = {"scan", "organization", "allowlist", "rules", "limits"}
 
+# Starter file for ``baittrace init``. Keys match load_config(); comments point
+# at the allowlist suppressor so a first-time operator does not have to guess.
+INIT_TEMPLATE = """\
+# BaitTrace operator config.
+# Discovery: --config, then ./baittrace.toml, then
+# $XDG_CONFIG_HOME/baittrace/config.toml (or ~/.config/baittrace/config.toml).
+
+[organization]
+# Mail domains you operate. Used when identity compares "is this us".
+domains = []
+# Display names of people who are frequently impersonated.
+executives = []
+# Hostnames of MTAs you operate. Received hops below these are attacker-supplied.
+trusted_relays = []
+
+[allowlist]
+# Sending domains you have already vouched for. Fires IDN900 and skips other
+# identity findings for that sender. Do not allowlist gmail.com: allowlist
+# *your* vendor's sending domain. See docs/rules/IDN900.md.
+domains = []
+addresses = []
+
+[scan]
+online = false
+follow_redirects = false
+redact = false
+rulepack = "core@2026.08"
+
+[rules]
+# Rule IDs to stop firing, e.g. ["HDR003"].
+disabled = []
+# Optional per-rule weight overrides:
+# [rules.weights]
+# IDN002 = 4.0
+"""
+
 
 @dataclass(frozen=True, slots=True)
 class Config:
@@ -73,6 +109,13 @@ def _as_str_tuple(value: Any, where: str) -> tuple[str, ...]:
     return tuple(str(v) for v in value)
 
 
+def global_config_path() -> Path:
+    """``$XDG_CONFIG_HOME/baittrace/config.toml``, or ``~/.config/...``."""
+    xdg = os.environ.get("XDG_CONFIG_HOME")
+    base = Path(xdg) if xdg else Path.home() / ".config"
+    return base / "baittrace" / "config.toml"
+
+
 def discover_config_path(explicit: Path | None = None) -> Path | None:
     if explicit is not None:
         if not explicit.is_file():
@@ -83,10 +126,23 @@ def discover_config_path(explicit: Path | None = None) -> Path | None:
     if local.is_file():
         return local
 
-    xdg = os.environ.get("XDG_CONFIG_HOME")
-    base = Path(xdg) if xdg else Path.home() / ".config"
-    candidate = base / "baittrace" / "config.toml"
+    candidate = global_config_path()
     return candidate if candidate.is_file() else None
+
+
+def write_init_config(path: Path, *, force: bool = False) -> Path:
+    """Write :data:`INIT_TEMPLATE` to ``path``.
+
+    Refuses to overwrite an existing file unless ``force`` is true.
+    """
+    if path.exists() and not force:
+        raise ConfigError(f"{path} already exists; pass --force to overwrite")
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(INIT_TEMPLATE, encoding="utf-8")
+    except OSError as exc:
+        raise ConfigError(f"could not write {path}: {exc}") from exc
+    return path
 
 
 def load_config(explicit: Path | None = None) -> Config:

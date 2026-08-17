@@ -9,10 +9,13 @@ used in a pipeline.
 from __future__ import annotations
 
 import json
+import sys
+from pathlib import Path
 
 import pytest
 
-from baittrace.cli import EXIT_CLEAN, EXIT_DETECTED, EXIT_ERROR, main
+from baittrace.cli import EXIT_CLEAN, EXIT_DETECTED, EXIT_ERROR, build_parser, main
+from baittrace.config import load_config
 
 from ..conftest import CORPUS
 
@@ -84,8 +87,15 @@ class TestOtherCommands:
     def test_explain_is_case_insensitive(self) -> None:
         assert main(["explain", "idn003"]) == EXIT_CLEAN
 
-    def test_explain_rejects_an_unknown_rule(self) -> None:
+    def test_explain_rejects_an_unknown_rule(self, capsys) -> None:
         assert main(["explain", "ZZZ999"]) == EXIT_ERROR
+        assert "baittrace rules" in capsys.readouterr().err
+
+    def test_explain_suggests_nearby_rule_ids(self, capsys) -> None:
+        assert main(["explain", "IDN003x"]) == EXIT_ERROR
+        err = capsys.readouterr().err
+        assert "Did you mean" in err
+        assert "IDN003" in err
 
     def test_schema_emits_valid_json(self, capsys) -> None:
         assert main(["schema"]) == EXIT_CLEAN
@@ -100,6 +110,12 @@ class TestOtherCommands:
     def test_no_arguments_prints_help(self, capsys) -> None:
         assert main([]) == EXIT_ERROR
         assert "usage" in capsys.readouterr().out.lower()
+
+    def test_help_includes_examples(self) -> None:
+        text = build_parser().format_help()
+        assert "examples:" in text
+        assert "instructor-demo.eml" in text
+        assert "baittrace explain IDN003" in text
 
 
 class TestStdin:
@@ -134,3 +150,62 @@ def test_redaction_masks_addresses(flag: str, capsys) -> None:
     main(["scan", str(MALICIOUS), flag, "--no-color"])
     out = capsys.readouterr().out
     assert "account@micros0ft-login.example" not in out
+
+
+class TestTerminalUx:
+    def test_bare_invocation_on_a_tty_prints_getting_started(self, monkeypatch, capsys) -> None:
+        monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
+        assert main([]) == EXIT_ERROR
+        out = capsys.readouterr().out.lower()
+        assert "usage" in out
+        assert "instructor-demo.eml" in out
+        assert "save a message as .eml" in out
+
+    def test_tty_scan_appends_next_steps(self, monkeypatch, capsys) -> None:
+        monkeypatch.setattr("baittrace.cli._stdout_is_tty", lambda: True)
+        main(["scan", str(MALICIOUS), "--no-color"])
+        out = capsys.readouterr().out
+        assert "baittrace explain" in out
+        assert "--online" in out
+        assert "--format json" in out
+
+    def test_json_on_a_tty_has_no_next_footer(self, monkeypatch, capsys) -> None:
+        monkeypatch.setattr("baittrace.cli._stdout_is_tty", lambda: True)
+        main(["scan", str(MALICIOUS), "--format", "json", "--deterministic"])
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["schema_version"] == "1.0"
+
+    def test_missing_file_stderr_mentions_eml(self, capsys) -> None:
+        assert main(["scan", "does-not-exist.eml"]) == EXIT_ERROR
+        err = capsys.readouterr().err
+        assert "no such file" in err
+        assert ".eml" in err
+
+    def test_init_writes_and_refuses_overwrite(self, tmp_path: Path, monkeypatch, capsys) -> None:
+        monkeypatch.chdir(tmp_path)
+        assert main(["init"]) == EXIT_CLEAN
+        config_path = tmp_path / "baittrace.toml"
+        assert config_path.is_file()
+        text = config_path.read_text(encoding="utf-8")
+        assert "IDN900" in text
+        loaded = load_config(config_path)
+        assert loaded.rulepack == "core@2026.08"
+
+        assert main(["init"]) == EXIT_ERROR
+        assert "--force" in capsys.readouterr().err
+        assert main(["init", "--force"]) == EXIT_CLEAN
+
+    def test_init_global_uses_xdg(self, tmp_path: Path, monkeypatch, capsys) -> None:
+        monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
+        assert main(["init", "--global"]) == EXIT_CLEAN
+        written = tmp_path / "baittrace" / "config.toml"
+        assert written.is_file()
+        assert "wrote" in capsys.readouterr().out
+
+    @pytest.mark.parametrize("shell", ["bash", "zsh", "fish"])
+    def test_completion_mentions_scan_and_a_rule(self, shell: str, capsys) -> None:
+        assert main(["completion", shell]) == EXIT_CLEAN
+        out = capsys.readouterr().out
+        assert "scan" in out
+        assert "IDN003" in out
+        assert "init" in out

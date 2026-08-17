@@ -18,6 +18,9 @@ from .limits import Limits
 
 CHUNK = 64 * 1024
 STDIN_SENTINEL = "-"
+_UNSUPPORTED_SUFFIXES = {".msg", ".mbox", ".mbx", ".pst", ".ost"}
+_DEMO = "baittrace scan corpus/malicious/instructor-demo.eml"
+_SAVE_AS_EML = "Save the message as .eml (Gmail: menu then Download message) and try again."
 
 
 @dataclass(frozen=True, slots=True)
@@ -87,13 +90,37 @@ def display_source(path: Path) -> str:
         return str(path)
 
 
+def _reject_unsupported_format(path: Path) -> None:
+    suffix = path.suffix.lower()
+    if suffix not in _UNSUPPORTED_SUFFIXES:
+        return
+    kind = suffix.lstrip(".")
+    raise IngestError(
+        f"{path} is {kind} format, which is not supported. "
+        "Export or save the message as .eml and scan that file."
+    )
+
+
+def _directory_error(path: Path) -> IngestError:
+    found = sorted(p.name for p in path.glob("*.eml"))
+    extra = ""
+    if found:
+        shown = found[:5]
+        extra = f"; found: {', '.join(shown)}"
+        if len(found) > 5:
+            extra += ", ..."
+    return IngestError(f"{path} is a directory; pass a single message file{extra}")
+
+
 def read_path(path: Path, limits: Limits | None = None) -> RawInput:
     bounds = limits or Limits()
 
+    _reject_unsupported_format(path)
+
     if not path.exists():
-        raise IngestError(f"no such file: {path}")
+        raise IngestError(f"no such file: {path}. {_SAVE_AS_EML} Demo: {_DEMO}")
     if path.is_dir():
-        raise IngestError(f"{path} is a directory; pass a single message file")
+        raise _directory_error(path)
 
     try:
         size = path.stat().st_size

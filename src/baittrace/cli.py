@@ -1,6 +1,6 @@
 """Command line interface.
 
-Exit codes are part of the contract, because the difference between "found
+Exit codes are the part of the contract, because the difference between "found
 something" and "the tool broke" is what makes this safe to put in a pipeline:
 
 ====  ======================================================================
@@ -13,18 +13,23 @@ something" and "the tool broke" is what makes this safe to put in a pipeline:
 from __future__ import annotations
 
 import argparse
+import difflib
+import shlex
 import sys
 from pathlib import Path
 from typing import NoReturn
 
 from ._version import __version__
-from .analyzers.registry import all_rules, find_rule
-from .config import Config, load_config
+from .analyzers.registry import all_rules, discover, find_rule
+from .completion import SHELLS
+from .completion import render as render_completion
+from .config import CONFIG_FILENAME, Config, global_config_path, load_config, write_init_config
 from .errors import BaitTraceError
 from .pipeline import scan as run_scan
 from .render import get as get_renderer
 from .render.json import schema_json
-from .render.layout import Style, color_enabled, unicode_enabled
+from .render.layout import Style, color_enabled, field, unicode_enabled
+from .report import Report
 from .scoring import BAND_ORDER, DEFAULT_RULEPACK, load_rulepack
 
 EXIT_CLEAN = 0
@@ -39,17 +44,47 @@ _FAIL_ON = {
     "never": 99,
 }
 
-SUBCOMMANDS = {"scan", "explain", "rules", "schema", "version"}
+SUBCOMMANDS = {"scan", "explain", "rules", "schema", "version", "init", "completion"}
+
+_EXAMPLES = """\
+examples:
+  baittrace scan corpus/malicious/instructor-demo.eml
+  baittrace scan suspicious.eml
+  baittrace scan - --format json < message.eml
+  baittrace explain IDN003
+"""
+
+_GETTING_STARTED = """\
+BaitTrace triages one saved email. Analysis is offline and inert by default.
+
+  baittrace scan corpus/malicious/instructor-demo.eml
+
+Save a message as .eml first (Gmail: menu then Download message).
+Then: baittrace scan suspicious.eml
+
+"""
+
+
+def _category_choices() -> tuple[str, ...]:
+    """Categories implemented by built-in analyzers, in registration order."""
+    return tuple(dict.fromkeys(str(a.category) for a in discover(include_plugins=False)))
+
+
+def _stdout_is_tty() -> bool:
+    isatty = getattr(sys.stdout, "isatty", None)
+    return bool(isatty and isatty())
 
 
 def build_parser() -> argparse.ArgumentParser:
+    categories = _category_choices()
     parser = argparse.ArgumentParser(
         prog="baittrace",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
         description=(
             "Offline-first, explainable phishing triage. Analysis is inert by "
             "default: no network, no HTML rendering, and nothing the message "
             "references is ever fetched. Pass --online or --follow-redirects to "
-            "opt in to network checks."
+            "opt in to network checks.\n\n" + _EXAMPLES
         ),
         epilog="Documentation: https://github.com/JobayerBhuiyan/baittrace",
     )
@@ -58,10 +93,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     scan_parser = subparsers.add_parser(
         "scan",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
         help="analyze one message and print a report",
-        description="Analyze one .eml file, or '-' to read a message from stdin.",
+        description=("Analyze one .eml file, or '-' to read a message from stdin.\n\n" + _EXAMPLES),
     )
-    scan_parser.add_argument("path", help="path to the message, or '-' for stdin")
+    scan_parser.add_argument("path", metavar="PATH", help="path to the message, or '-' for stdin")
     scan_parser.add_argument(
         "--format",
         default="text",
@@ -100,8 +136,22 @@ def build_parser() -> argparse.ArgumentParser:
     scan_parser.add_argument(
         "--rulepack", default=None, help=f"scoring pack to use (default: {DEFAULT_RULEPACK})"
     )
-    scan_parser.add_argument("--only", action="append", default=[], help="run only this category")
-    scan_parser.add_argument("--skip", action="append", default=[], help="skip this category")
+    scan_parser.add_argument(
+        "--only",
+        action="append",
+        default=[],
+        choices=categories,
+        metavar="CATEGORY",
+        help="run only this category",
+    )
+    scan_parser.add_argument(
+        "--skip",
+        action="append",
+        default=[],
+        choices=categories,
+        metavar="CATEGORY",
+        help="skip this category",
+    )
     scan_parser.add_argument(
         "--no-plugins", action="store_true", help="ignore third-party analyzers"
     )
@@ -118,13 +168,51 @@ def build_parser() -> argparse.ArgumentParser:
     explain_parser = subparsers.add_parser(
         "explain", help="describe one rule in detail", description="Explain a rule by ID."
     )
-    explain_parser.add_argument("rule_id", help="a rule ID such as IDN003")
+    explain_parser.add_argument("rule_id", metavar="RULE_ID", help="a rule ID such as IDN003")
 
     rules_parser = subparsers.add_parser("rules", help="list every rule this build can emit")
-    rules_parser.add_argument("--category", default=None, help="filter to one category")
+    rules_parser.add_argument(
+        "--category",
+        default=None,
+        choices=categories,
+        metavar="CATEGORY",
+        help="filter to one category",
+    )
 
     subparsers.add_parser("schema", help="print the JSON Schema for --format json")
     subparsers.add_parser("version", help="print version, rulepack and analyzer inventory")
+
+    init_parser = subparsers.add_parser(
+        "init",
+        help="write a starter baittrace.toml",
+        description=(
+            "Write a commented baittrace.toml with organization, allowlist, scan, "
+            "and rules sections. Existing files are left alone unless --force is set."
+        ),
+    )
+    init_parser.add_argument(
+        "--global",
+        dest="global_config",
+        action="store_true",
+        help="write to $XDG_CONFIG_HOME/baittrace/config.toml instead of ./baittrace.toml",
+    )
+    init_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="overwrite an existing config file",
+    )
+
+    completion_parser = subparsers.add_parser(
+        "completion",
+        help="print a shell completion script",
+        description="Print a completion script for bash, zsh, or fish to stdout.",
+    )
+    completion_parser.add_argument(
+        "shell",
+        choices=SHELLS,
+        metavar="SHELL",
+        help="shell to generate completions for",
+    )
 
     return parser
 
@@ -163,12 +251,37 @@ def _config_from(args: argparse.Namespace) -> Config:
     )
 
 
+def _quote_path(path: str) -> str:
+    if path == "-":
+        return path
+    return shlex.quote(path)
+
+
+def next_steps(report: Report, path: str, style: Style) -> str:
+    """TTY-only follow-up commands. Not part of the golden report."""
+    commands: list[str] = []
+    quoted = _quote_path(path)
+    indicators = [signal for signal, _points in report.verdict.scored if not signal.is_suppressor]
+    if indicators:
+        commands.append(f"baittrace explain {indicators[0].id}")
+    if not report.online:
+        commands.append(f"baittrace scan {quoted} --online")
+    commands.append(f"baittrace scan {quoted} --format json")
+
+    lines = field("Next", commands[0], style)
+    for command in commands[1:]:
+        lines.extend(field("", command, style))
+    return "\n".join(lines)
+
+
 def cmd_scan(args: argparse.Namespace) -> int:
     config = _config_from(args)
     style = _style_from(args)
 
     report = run_scan(args.path, config)
     output = get_renderer(args.format)(report, style)
+    if args.format == "text" and _stdout_is_tty():
+        output = f"{output}\n{next_steps(report, str(args.path), style)}\n"
     print(output)
 
     threshold = _FAIL_ON[args.fail_on]
@@ -179,8 +292,13 @@ def cmd_scan(args: argparse.Namespace) -> int:
 def cmd_explain(args: argparse.Namespace) -> int:
     spec = find_rule(args.rule_id)
     if spec is None:
-        known = ", ".join(s.id for s in all_rules())
-        print(f"unknown rule {args.rule_id!r}. Known rules: {known}", file=sys.stderr)
+        ids = [rule.id for rule in all_rules()]
+        matches = difflib.get_close_matches(args.rule_id.upper(), ids, n=3, cutoff=0.5)
+        if matches:
+            hint = f"Did you mean: {', '.join(matches)}?"
+        else:
+            hint = "List them with: baittrace rules"
+        print(f"unknown rule {args.rule_id!r}. {hint}", file=sys.stderr)
         return EXIT_ERROR
 
     style = Style(color=color_enabled(None), unicode=unicode_enabled(None))
@@ -233,8 +351,6 @@ def cmd_schema(_: argparse.Namespace) -> int:
 
 
 def cmd_version(_: argparse.Namespace) -> int:
-    from .analyzers.registry import discover
-
     pack = load_rulepack()
     print(f"baittrace {__version__}")
     print(f"rulepack  {pack.identifier} ({pack.combination})")
@@ -245,12 +361,33 @@ def cmd_version(_: argparse.Namespace) -> int:
     return EXIT_CLEAN
 
 
+def cmd_init(args: argparse.Namespace) -> int:
+    path = global_config_path() if args.global_config else Path.cwd() / CONFIG_FILENAME
+    written = write_init_config(path, force=args.force)
+    print(f"wrote {written}")
+    return EXIT_CLEAN
+
+
+def cmd_completion(args: argparse.Namespace) -> int:
+    print(
+        render_completion(
+            args.shell,
+            rule_ids=tuple(spec.id for spec in all_rules()),
+            categories=_category_choices(),
+        ),
+        end="",
+    )
+    return EXIT_CLEAN
+
+
 _COMMANDS = {
     "scan": cmd_scan,
     "explain": cmd_explain,
     "rules": cmd_rules,
     "schema": cmd_schema,
     "version": cmd_version,
+    "init": cmd_init,
+    "completion": cmd_completion,
 }
 
 
@@ -268,6 +405,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(_normalize(list(sys.argv[1:] if argv is None else argv)))
 
     if args.command is None:
+        if _stdout_is_tty():
+            print(_GETTING_STARTED, end="")
         parser.print_help()
         return EXIT_ERROR
 

@@ -5,7 +5,8 @@ and break different people.
 
 ## 1. CLI
 
-The commands `scan`, `explain`, `rules`, `schema`, and `version` are stable.
+The commands `scan`, `explain`, `rules`, `schema`, `version`, `init`, and
+`completion` are stable. `init` and `completion` are additive (minor).
 Exit codes are part of the contract:
 
 | Code | Meaning |
